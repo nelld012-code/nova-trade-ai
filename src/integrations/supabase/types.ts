@@ -14,16 +14,405 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          reference: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      operations: {
+        Row: {
+          asset: string
+          closed_at: string | null
+          created_at: string
+          direction: string
+          entry_price: number
+          exit_price: number | null
+          id: string
+          opened_at: string
+          pnl: number
+          return_pct: number
+          size: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset: string
+          closed_at?: string | null
+          created_at?: string
+          direction?: string
+          entry_price?: number
+          exit_price?: number | null
+          id?: string
+          opened_at?: string
+          pnl?: number
+          return_pct?: number
+          size?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          asset?: string
+          closed_at?: string | null
+          created_at?: string
+          direction?: string
+          entry_price?: number
+          exit_price?: number | null
+          id?: string
+          opened_at?: string
+          pnl?: number
+          return_pct?: number
+          size?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          ai_robot_access: string
+          created_at: string
+          features: Json
+          id: string
+          is_popular: boolean
+          min_investment: number
+          name: string
+          risk_level: string
+          slug: string
+          sort_order: number
+          strategy: string
+          support: string
+          tagline: string
+        }
+        Insert: {
+          ai_robot_access?: string
+          created_at?: string
+          features?: Json
+          id?: string
+          is_popular?: boolean
+          min_investment?: number
+          name: string
+          risk_level?: string
+          slug: string
+          sort_order?: number
+          strategy?: string
+          support?: string
+          tagline?: string
+        }
+        Update: {
+          ai_robot_access?: string
+          created_at?: string
+          features?: Json
+          id?: string
+          is_popular?: boolean
+          min_investment?: number
+          name?: string
+          risk_level?: string
+          slug?: string
+          sort_order?: number
+          strategy?: string
+          support?: string
+          tagline?: string
+        }
+        Relationships: []
+      }
+      platform_metrics: {
+        Row: {
+          hint: string
+          id: string
+          key: string
+          label: string
+          sort_order: number
+          value: string
+        }
+        Insert: {
+          hint?: string
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+          value: string
+        }
+        Update: {
+          hint?: string
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+          value?: string
+        }
+        Relationships: []
+      }
+      portfolio: {
+        Row: {
+          balance: number
+          id: string
+          invested: number
+          performance_pct: number
+          today_pnl: number
+          total_deposited: number
+          total_pnl: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          invested?: number
+          performance_pct?: number
+          today_pnl?: number
+          total_deposited?: number
+          total_pnl?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          invested?: number
+          performance_pct?: number
+          today_pnl?: number
+          total_deposited?: number
+          total_pnl?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robots: {
+        Row: {
+          capital_allocation: number
+          created_at: string
+          id: string
+          markets: string[]
+          mode: string
+          risk_level: string
+          status: string
+          strategy: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capital_allocation?: number
+          created_at?: string
+          id?: string
+          markets?: string[]
+          mode?: string
+          risk_level?: string
+          status?: string
+          strategy?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capital_allocation?: number
+          created_at?: string
+          id?: string
+          markets?: string[]
+          mode?: string
+          risk_level?: string
+          status?: string
+          strategy?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          currency: string
+          email_notifications: boolean
+          id: string
+          language: string
+          push_notifications: boolean
+          risk_alerts: boolean
+          theme: string
+          two_factor_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          currency?: string
+          email_notifications?: boolean
+          id?: string
+          language?: string
+          push_notifications?: boolean
+          risk_alerts?: boolean
+          theme?: string
+          two_factor_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          currency?: string
+          email_notifications?: boolean
+          id?: string
+          language?: string
+          push_notifications?: boolean
+          risk_alerts?: boolean
+          theme?: string
+          two_factor_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          destination: string
+          id: string
+          method: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          destination?: string
+          id?: string
+          method?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          destination?: string
+          id?: string
+          method?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +539,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
