@@ -1,51 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Eye, EyeOff, Loader2, Mail, Lock, User } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Eye, EyeOff, Loader2, Mail, Lock, User, Phone, MapPin, CalendarDays, Globe2 } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { countryOptions } from "@/lib/countries";
 
 export const Route = createFileRoute("/register")({ component: RegisterPage });
+function calculateAge(dateOfBirth: string) { const today = new Date(); const birth = new Date(`${dateOfBirth}T00:00:00`); let age = today.getFullYear() - birth.getFullYear(); const month = today.getMonth() - birth.getMonth(); if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--; return age; }
 
 function RegisterPage() {
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  async function handleRegister(event: React.FormEvent) {
-    event.preventDefault();
-    setError("");
-    setMessage("");
-    setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: name.trim() } },
-    });
-    if (error) setError(error.message);
-    else if (data.session) await navigate({ to: "/dashboard" });
-    else setMessage("Cuenta creada. Revisa tu correo para confirmar tu dirección antes de iniciar sesión.");
-    setLoading(false);
-  }
-
-  return (
-    <AuthShell title="Crea tu cuenta" description="Comienza tu experiencia con TradeNova AI en pocos pasos.">
-      <form onSubmit={handleRegister} className="space-y-5">
-        {error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
-        {message && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">{message}</div>}
-        <div className="space-y-2"><Label htmlFor="name">Nombre completo</Label><div className="relative"><User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="name" placeholder="Tu nombre" className="pl-9" value={name} onChange={(e) => setName(e.target.value)} required /></div></div>
-        <div className="space-y-2"><Label htmlFor="email">Correo electrónico</Label><div className="relative"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="email" type="email" autoComplete="email" placeholder="tu@email.com" className="pl-9" value={email} onChange={(e) => setEmail(e.target.value)} required /></div></div>
-        <div className="space-y-2"><Label htmlFor="password">Contraseña</Label><div className="relative"><Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="password" type={show ? "text" : "password"} autoComplete="new-password" placeholder="Mínimo 8 caracteres" className="pl-9 pr-10" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required /><button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label="Mostrar contraseña">{show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
-        <Button type="submit" className="h-11 w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creando cuenta...</> : "Crear cuenta"}</Button>
-      </form>
-      <p className="mt-7 text-center text-sm text-muted-foreground">¿Ya tienes una cuenta? <Link to="/login" className="font-semibold text-primary hover:underline">Iniciar sesión</Link></p>
-    </AuthShell>
-  );
+  const navigate = useNavigate(); const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [phone, setPhone] = useState(""); const [country, setCountry] = useState(""); const [address, setAddress] = useState(""); const [dateOfBirth, setDateOfBirth] = useState(""); const [password, setPassword] = useState(""); const [accepted, setAccepted] = useState(false); const [show, setShow] = useState(false); const [loading, setLoading] = useState(false); const [message, setMessage] = useState(""); const [error, setError] = useState("");
+  const maxBirthDate = useMemo(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().slice(0, 10); }, []);
+  async function handleRegister(event: React.FormEvent) { event.preventDefault(); setError(""); setMessage(""); if (!country) { setError("Selecciona tu país."); return; } if (!dateOfBirth) { setError("La fecha de nacimiento es obligatoria."); return; } if (calculateAge(dateOfBirth) < 18) { setError("Debes tener al menos 18 años para crear una cuenta."); return; } if (!accepted) { setError("Debes aceptar los términos y condiciones para continuar."); return; } setLoading(true); const selectedCountry = countryOptions.find((item) => item.code === country); const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim(), phone: phone.trim(), country, country_name: selectedCountry?.name ?? country, address: address.trim(), date_of_birth: dateOfBirth } } }); if (error) setError(error.message); else if (data.session) await navigate({ to: "/dashboard" }); else setMessage("Cuenta creada. Revisa tu correo para confirmar tu dirección antes de iniciar sesión."); setLoading(false); }
+  return <AuthShell title="Crea tu cuenta" description="Completa tus datos para comenzar tu experiencia con TradeNova AI.">
+    <form onSubmit={handleRegister} className="space-y-4">{error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}{message && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600">{message}</div>}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2"><Label htmlFor="name">Nombre completo</Label><div className="relative"><User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="name" autoComplete="name" placeholder="Tu nombre completo" className="pl-9" value={name} onChange={(e) => setName(e.target.value)} required /></div></div>
+        <div className="space-y-2"><Label htmlFor="email">Correo electrónico</Label><div className="relative"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="email" type="email" autoComplete="email" placeholder="tu@email.com" className="pl-9" value={email} onChange={(e) => setEmail(e.target.value)} required /></div><p className="text-xs text-slate-500">Te enviaremos un correo para confirmar tu cuenta.</p></div>
+        <div className="space-y-2"><Label htmlFor="phone">Teléfono</Label><div className="relative"><Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="phone" type="tel" autoComplete="tel" placeholder="+58 ..." className="pl-9" value={phone} onChange={(e) => setPhone(e.target.value)} required /></div></div>
+        <div className="space-y-2"><Label htmlFor="country">País</Label><div className="relative"><Globe2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><select id="country" value={country} onChange={(e) => setCountry(e.target.value)} required className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm"><option value="">Selecciona tu país</option>{countryOptions.map((item) => <option key={item.code} value={item.code}>{item.flag} {item.name}</option>)}</select></div></div>
+        <div className="space-y-2"><Label htmlFor="dateOfBirth">Fecha de nacimiento</Label><div className="relative"><CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="dateOfBirth" type="date" max={maxBirthDate} autoComplete="bday" className="pl-9" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} required /></div><p className="text-xs text-slate-500">Debes ser mayor de 18 años.</p></div>
+        <div className="space-y-2 sm:col-span-2"><Label htmlFor="address">Dirección</Label><div className="relative"><MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="address" autoComplete="street-address" placeholder="Calle, número, ciudad, estado..." className="pl-9" value={address} onChange={(e) => setAddress(e.target.value)} required /></div></div>
+        <div className="space-y-2 sm:col-span-2"><Label htmlFor="password">Contraseña</Label><div className="relative"><Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input id="password" type={show ? "text" : "password"} autoComplete="new-password" placeholder="Mínimo 8 caracteres" className="pl-9 pr-10" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required /><button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label="Mostrar contraseña">{show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></div>
+      </div>
+      <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"><input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300" required /><span>Acepto los términos y condiciones y confirmo que tengo <strong>18 años o más</strong>.</span></label>
+      <Button type="submit" className="h-11 w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creando cuenta...</> : "Crear cuenta"}</Button>
+    </form><p className="mt-7 text-center text-sm text-muted-foreground">¿Ya tienes una cuenta? <Link to="/login" className="font-semibold text-primary hover:underline">Iniciar sesión</Link></p>
+  </AuthShell>;
 }
