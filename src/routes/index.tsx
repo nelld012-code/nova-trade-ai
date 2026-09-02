@@ -1,24 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { MetricsSection } from "@/components/landing/MetricsSection";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { RobotSection } from "@/components/landing/RobotSection";
+import { PerformanceSection } from "@/components/landing/PerformanceSection";
+import { SiteHeader } from "@/components/landing/SiteHeader";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <SiteHeader />
+      <main>
+        <HeroSection />
+        <MetricsSection />
+        <HowItWorks />
+        <RobotSection />
+        <PerformanceSection />
+      </main>
+      <footer className="border-t border-border bg-background py-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 text-sm text-muted-foreground sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <p>© {new Date().getFullYear()} TradeNova AI. Todos los derechos reservados.</p>
+          <p className="text-xs">Trading inteligente. Decisiones más informadas.</p>
+        </div>
+      </footer>
     </div>
   );
 }
