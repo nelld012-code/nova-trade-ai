@@ -8,6 +8,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { RobotConfig } from "@/components/dashboard/RobotConfig";
 import { OperationsPanel } from "@/components/dashboard/OperationsPanel";
 import { PortfolioPanel } from "@/components/dashboard/PortfolioPanel";
+import { FundsPanel } from "@/components/dashboard/FundsPanel";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -29,7 +30,6 @@ function DashboardPage() {
   const [hasPortfolio, setHasPortfolio] = useState(false);
   const [operations, setOperations] = useState<Operation[]>([]);
   const [name, setName] = useState("Trader");
-  const [robotKey, setRobotKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -69,8 +69,9 @@ function DashboardPage() {
           <Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#configurar-robot">Configurar robot</a></Button></div></CardContent></Card>
         </div>
         <PortfolioPanel portfolio={portfolio} />
-        <RobotConfig key={robotKey} userId={session.user.id} />
-        <Card id="portafolio" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
+        <RobotConfig userId={session.user.id} />
+        <FundsPanel userId={session.user.id} />
+        <Card id="portafolio-status" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
       </section>
     </DashboardShell>
   );
