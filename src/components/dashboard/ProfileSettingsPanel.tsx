@@ -1,142 +1,34 @@
-import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, KeyRound, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, CheckCircle2, KeyRound, LockKeyhole, Save, ShieldCheck, UserRound, Camera, MapPin, Globe2, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { countryOptions } from "@/lib/countries";
 
-type Settings = {
-  language: string;
-  currency: string;
-  theme: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
-  risk_alerts: boolean;
-  two_factor_enabled: boolean;
-};
-
-const defaultSettings: Settings = {
-  language: "es",
-  currency: "USD",
-  theme: "dark",
-  email_notifications: true,
-  push_notifications: false,
-  risk_alerts: true,
-  two_factor_enabled: false,
-};
+type Settings = { language: string; currency: string; theme: string; email_notifications: boolean; push_notifications: boolean; risk_alerts: boolean; two_factor_enabled: boolean };
+const defaultSettings: Settings = { language: "es", currency: "USD", theme: "dark", email_notifications: true, push_notifications: false, risk_alerts: true, two_factor_enabled: false };
+function calculateAge(dateOfBirth: string) { const today = new Date(); const birth = new Date(`${dateOfBirth}T00:00:00`); let age = today.getFullYear() - birth.getFullYear(); const month = today.getMonth() - birth.getMonth(); if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--; return age; }
 
 export function ProfileSettingsPanel({ userId, email }: { userId: string; email?: string | null }) {
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      const [{ data: profile }, { data: saved }] = await Promise.all([
-        supabase.from("profiles").select("full_name,phone").eq("id", userId).maybeSingle(),
-        supabase.from("settings").select("language,currency,theme,email_notifications,push_notifications,risk_alerts,two_factor_enabled").eq("user_id", userId).maybeSingle(),
-      ]);
-      if (!active) return;
-      if (profile) {
-        setFullName(profile.full_name ?? "");
-        setPhone(profile.phone ?? "");
-      }
-      if (saved) setSettings(saved);
-    }
-    load();
-    return () => { active = false; };
-  }, [userId]);
-
-  const clearStatus = () => { setMessage(null); setError(null); };
-
-  async function saveProfile() {
-    clearStatus();
-    if (!fullName.trim()) { setError("El nombre completo es obligatorio."); return; }
-    setSavingProfile(true);
-    const { error: saveError } = await supabase.from("profiles").upsert({
-      id: userId,
-      full_name: fullName.trim(),
-      email: email ?? "",
-      phone: phone.trim() || null,
-    });
-    setSavingProfile(false);
-    if (saveError) setError(saveError.message);
-    else setMessage("Perfil actualizado correctamente.");
-  }
-
-  async function saveSettings() {
-    clearStatus();
-    setSavingSettings(true);
-    const { error: saveError } = await supabase.from("settings").upsert({ user_id: userId, ...settings });
-    setSavingSettings(false);
-    if (saveError) setError(saveError.message);
-    else setMessage("Preferencias guardadas correctamente.");
-  }
-
-  async function changePassword() {
-    clearStatus();
-    if (newPassword.length < 8) { setError("La nueva contraseña debe tener al menos 8 caracteres."); return; }
-    if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden."); return; }
-    setChangingPassword(true);
-    const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
-    setChangingPassword(false);
-    if (passwordError) setError(passwordError.message);
-    else { setNewPassword(""); setConfirmPassword(""); setMessage("Contraseña actualizada correctamente."); }
-  }
-
-  const toggle = (key: keyof Pick<Settings, "email_notifications" | "push_notifications" | "risk_alerts">) =>
-    setSettings((current) => ({ ...current, [key]: !current[key] }));
-
-  return (
-    <div className="space-y-6">
-      {message && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />{message}</div>}
-      {error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><AlertCircle className="h-4 w-4" />{error}</div>}
-
-      <Card id="perfil" className="border-slate-200 shadow-sm">
-        <CardHeader><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-50 p-2 text-blue-600"><UserRound className="h-5 w-5" /></div><div><CardTitle>Perfil personal</CardTitle><CardDescription>Actualiza los datos visibles de tu cuenta.</CardDescription></div></div></CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2"><label className="text-sm font-medium">Nombre completo</label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre" /></div>
-          <div className="space-y-2"><label className="text-sm font-medium">Correo electrónico</label><Input value={email ?? ""} disabled className="bg-slate-50" /><p className="text-xs text-slate-500">El correo se gestiona desde autenticación.</p></div>
-          <div className="space-y-2"><label className="text-sm font-medium">Teléfono</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+55 ..." /></div>
-          <div className="flex items-end"><Button onClick={saveProfile} disabled={savingProfile}><Save />{savingProfile ? "Guardando..." : "Guardar perfil"}</Button></div>
-        </CardContent>
-      </Card>
-
-      <Card id="preferencias" className="border-slate-200 shadow-sm">
-        <CardHeader><CardTitle>Preferencias</CardTitle><CardDescription>Personaliza idioma, moneda, apariencia y avisos.</CardDescription></CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-5 sm:grid-cols-3">
-            <div className="space-y-2"><label className="text-sm font-medium">Idioma</label><select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="es">Español</option><option value="pt-BR">Português (Brasil)</option><option value="en">English</option></select></div>
-            <div className="space-y-2"><label className="text-sm font-medium">Moneda</label><select value={settings.currency} onChange={(e) => setSettings({ ...settings, currency: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="USD">USD — Dólar</option><option value="BRL">BRL — Real</option><option value="EUR">EUR — Euro</option></select></div>
-            <div className="space-y-2"><label className="text-sm font-medium">Tema</label><select value={settings.theme} onChange={(e) => setSettings({ ...settings, theme: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></div>
-          </div>
-          <div className="divide-y rounded-xl border">
-            {[ ["email_notifications", "Notificaciones por email", "Recibe actualizaciones importantes de tu cuenta."], ["push_notifications", "Notificaciones push", "Avisos en tiempo real cuando estén disponibles."], ["risk_alerts", "Alertas de riesgo", "Recibe avisos sobre cambios relevantes de riesgo."] ].map(([key, title, description]) => <div key={key} className="flex items-center justify-between gap-4 p-4"><div><p className="font-medium text-sm">{title}</p><p className="text-xs text-slate-500">{description}</p></div><Switch checked={settings[key as keyof Settings] as boolean} onCheckedChange={() => toggle(key as "email_notifications" | "push_notifications" | "risk_alerts")} /></div>)}
-          </div>
-          <Button onClick={saveSettings} disabled={savingSettings}><Save />{savingSettings ? "Guardando..." : "Guardar preferencias"}</Button>
-        </CardContent>
-      </Card>
-
-      <Card id="seguridad" className="border-slate-200 shadow-sm">
-        <CardHeader><div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2 text-emerald-600"><ShieldCheck className="h-5 w-5" /></div><div><CardTitle>Seguridad</CardTitle><CardDescription>Protege el acceso a tu cuenta.</CardDescription></div></div></CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border p-4"><div className="flex items-center gap-3"><LockKeyhole className="h-5 w-5 text-emerald-600" /><div><p className="font-medium">Contraseña</p><p className="text-xs text-slate-500">Protegida mediante Supabase Auth.</p></div></div></div>
-            <div className="rounded-xl border p-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-slate-500" /><div><p className="font-medium">Autenticación de dos factores</p><p className="text-xs text-slate-500">{settings.two_factor_enabled ? "Configurada" : "No configurada"}. Esta fase muestra el estado sin activar MFA automáticamente.</p></div></div></div>
-          </div>
-          <div className="max-w-xl space-y-4 rounded-xl border p-4"><div className="flex items-center gap-2"><KeyRound className="h-4 w-4" /><p className="font-semibold">Cambiar contraseña</p></div><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nueva contraseña (mín. 8 caracteres)" autoComplete="new-password" /><Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirmar nueva contraseña" autoComplete="new-password" /><Button onClick={changePassword} disabled={changingPassword}>{changingPassword ? "Actualizando..." : "Actualizar contraseña"}</Button></div>
-          <p className="text-xs text-slate-500">La autenticación de dos factores queda preparada como estado de configuración; no se presenta como activa si Supabase MFA todavía no está configurado.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const [fullName, setFullName] = useState(""); const [phone, setPhone] = useState(""); const [country, setCountry] = useState(""); const [address, setAddress] = useState(""); const [dateOfBirth, setDateOfBirth] = useState(""); const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Settings>(defaultSettings); const [newPassword, setNewPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [savingProfile, setSavingProfile] = useState(false); const [uploadingAvatar, setUploadingAvatar] = useState(false); const [savingSettings, setSavingSettings] = useState(false); const [changingPassword, setChangingPassword] = useState(false); const [message, setMessage] = useState<string | null>(null); const [error, setError] = useState<string | null>(null);
+  useEffect(() => { let active = true; async function load() { const db = supabase as any; const [{ data: profile }, { data: saved }] = await Promise.all([db.from("profiles").select("full_name,phone,country,address,date_of_birth,avatar_url").eq("id", userId).maybeSingle(), db.from("settings").select("language,currency,theme,email_notifications,push_notifications,risk_alerts,two_factor_enabled").eq("user_id", userId).maybeSingle()]); if (!active) return; if (profile) { setFullName(profile.full_name ?? ""); setPhone(profile.phone ?? ""); setCountry(profile.country ?? ""); setAddress(profile.address ?? ""); setDateOfBirth(profile.date_of_birth ?? ""); setAvatarUrl(profile.avatar_url ?? null); } if (saved) setSettings(saved); } load(); return () => { active = false; }; }, [userId]);
+  const selectedCountry = countryOptions.find((item) => item.code === country); const maxBirthDate = useMemo(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().slice(0, 10); }, []); const clearStatus = () => { setMessage(null); setError(null); };
+  async function uploadAvatar(file: File) { clearStatus(); if (!file.type.startsWith("image/")) { setError("Selecciona una imagen válida."); return; } if (file.size > 5 * 1024 * 1024) { setError("La foto debe pesar menos de 5 MB."); return; } setUploadingAvatar(true); try { const extension = file.name.split(".").pop()?.toLowerCase() || "jpg"; const path = `${userId}/avatar-${Date.now()}.${extension}`; const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type }); if (uploadError) throw uploadError; const { data } = supabase.storage.from("avatars").getPublicUrl(path); const db = supabase as any; const { error: saveError } = await db.from("profiles").update({ avatar_url: data.publicUrl }).eq("id", userId); if (saveError) throw saveError; setAvatarUrl(data.publicUrl); setMessage("Foto de perfil actualizada correctamente."); } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : "No se pudo subir la foto."); } finally { setUploadingAvatar(false); } }
+  async function saveProfile() { clearStatus(); if (!fullName.trim()) { setError("El nombre completo es obligatorio."); return; } if (!country) { setError("Selecciona tu país."); return; } if (!dateOfBirth || calculateAge(dateOfBirth) < 18) { setError("El perfil requiere una fecha de nacimiento válida de una persona mayor de 18 años."); return; } setSavingProfile(true); const db = supabase as any; const { error: saveError } = await db.from("profiles").upsert({ id: userId, full_name: fullName.trim(), email: email ?? "", phone: phone.trim() || null, country, address: address.trim() || null, date_of_birth: dateOfBirth }); setSavingProfile(false); if (saveError) setError(saveError.message); else setMessage("Perfil actualizado correctamente."); }
+  async function saveSettings() { clearStatus(); setSavingSettings(true); const { error: saveError } = await supabase.from("settings").upsert({ user_id: userId, ...settings }); setSavingSettings(false); if (saveError) setError(saveError.message); else setMessage("Preferencias guardadas correctamente."); }
+  async function changePassword() { clearStatus(); if (newPassword.length < 8) { setError("La nueva contraseña debe tener al menos 8 caracteres."); return; } if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden."); return; } setChangingPassword(true); const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword }); setChangingPassword(false); if (passwordError) setError(passwordError.message); else { setNewPassword(""); setConfirmPassword(""); setMessage("Contraseña actualizada correctamente."); } }
+  const toggle = (key: keyof Pick<Settings, "email_notifications" | "push_notifications" | "risk_alerts">) => setSettings((current) => ({ ...current, [key]: !current[key] }));
+  return <div className="space-y-6">
+    {message && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />{message}</div>}{error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><AlertCircle className="h-4 w-4" />{error}</div>}
+    <Card id="perfil" className="border-slate-200 shadow-sm"><CardHeader><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-50 p-2 text-blue-600"><UserRound className="h-5 w-5" /></div><div><CardTitle>Perfil personal</CardTitle><CardDescription>Actualiza tus datos y foto de perfil.</CardDescription></div></div></CardHeader><CardContent className="space-y-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center"><div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full border-4 border-white bg-slate-100 shadow ring-1 ring-slate-200">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${fullName || "usuario"}`} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-slate-400">{fullName.trim().charAt(0).toUpperCase() || "U"}</div>}</div><div><p className="font-semibold">Foto de perfil</p><p className="mb-3 text-xs text-slate-500">JPG, PNG o WebP · máximo 5 MB.</p><label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50"><Camera className="h-4 w-4" />{uploadingAvatar ? "Subiendo..." : "Cambiar foto"}<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploadingAvatar} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadAvatar(file); e.currentTarget.value = ""; }} /></label></div></div>
+      <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><label className="text-sm font-medium">Nombre completo</label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre" /></div><div className="space-y-2"><label className="text-sm font-medium">Correo electrónico</label><Input value={email ?? ""} disabled className="bg-slate-50" /><p className="text-xs text-slate-500">El correo se gestiona desde autenticación.</p></div><div className="space-y-2"><label className="text-sm font-medium">Teléfono</label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+58 ..." /></div><div className="space-y-2"><label className="text-sm font-medium">País</label><div className="relative"><Globe2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><select value={country} onChange={(e) => setCountry(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm"><option value="">Selecciona tu país</option>{countryOptions.map((item) => <option key={item.code} value={item.code}>{item.flag} {item.name}</option>)}</select></div></div><div className="space-y-2 sm:col-span-2"><label className="text-sm font-medium">Dirección</label><div className="relative"><MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Calle, número, ciudad, estado..." className="pl-9" /></div></div><div className="space-y-2"><label className="text-sm font-medium">Fecha de nacimiento</label><div className="relative"><CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input type="date" value={dateOfBirth} max={maxBirthDate} onChange={(e) => setDateOfBirth(e.target.value)} className="pl-9" /><p className="text-xs text-slate-500">Solo mayores de 18 años.</p></div></div><div className="flex items-end"><Button onClick={saveProfile} disabled={savingProfile}><Save />{savingProfile ? "Guardando..." : "Guardar perfil"}</Button></div></div>
+      {selectedCountry && <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">Tu país se mostrará como <strong>{selectedCountry.flag} {selectedCountry.name}</strong> en el sistema.</div>}
+    </CardContent></Card>
+    <Card id="preferencias" className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Preferencias</CardTitle><CardDescription>Personaliza idioma, moneda, apariencia y avisos.</CardDescription></CardHeader><CardContent className="space-y-6"><div className="grid gap-5 sm:grid-cols-3"><div className="space-y-2"><label className="text-sm font-medium">Idioma</label><select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="es">Español</option><option value="pt-BR">Português (Brasil)</option><option value="en">English</option></select></div><div className="space-y-2"><label className="text-sm font-medium">Moneda</label><select value={settings.currency} onChange={(e) => setSettings({ ...settings, currency: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="USD">USD — Dólar</option><option value="BRL">BRL — Real</option><option value="EUR">EUR — Euro</option></select></div><div className="space-y-2"><label className="text-sm font-medium">Tema</label><select value={settings.theme} onChange={(e) => setSettings({ ...settings, theme: e.target.value })} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"><option value="dark">Oscuro</option><option value="light">Claro</option><option value="system">Sistema</option></select></div></div><div className="divide-y rounded-xl border">{[["email_notifications", "Notificaciones por email", "Recibe actualizaciones importantes de tu cuenta."], ["push_notifications", "Notificaciones push", "Avisos en tiempo real cuando estén disponibles."], ["risk_alerts", "Alertas de riesgo", "Recibe avisos sobre cambios relevantes de riesgo."]].map(([key, title, description]) => <div key={key} className="flex items-center justify-between gap-4 p-4"><div><p className="font-medium text-sm">{title}</p><p className="text-xs text-slate-500">{description}</p></div><Switch checked={settings[key as keyof Settings] as boolean} onCheckedChange={() => toggle(key as "email_notifications" | "push_notifications" | "risk_alerts")} /></div>)}</div><Button onClick={saveSettings} disabled={savingSettings}><Save />{savingSettings ? "Guardando..." : "Guardar preferencias"}</Button></CardContent></Card>
+    <Card id="seguridad" className="border-slate-200 shadow-sm"><CardHeader><div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2 text-emerald-600"><ShieldCheck className="h-5 w-5" /></div><div><CardTitle>Seguridad</CardTitle><CardDescription>Protege el acceso a tu cuenta.</CardDescription></div></div></CardHeader><CardContent className="space-y-6"><div className="grid gap-4 sm:grid-cols-2"><div className="rounded-xl border p-4"><div className="flex items-center gap-3"><LockKeyhole className="h-5 w-5 text-emerald-600" /><div><p className="font-medium">Contraseña</p><p className="text-xs text-slate-500">Protegida mediante Supabase Auth.</p></div></div></div><div className="rounded-xl border p-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-slate-500" /><div><p className="font-medium">Autenticación de dos factores</p><p className="text-xs text-slate-500">{settings.two_factor_enabled ? "Configurada" : "No configurada"}. Esta fase muestra el estado sin activar MFA automáticamente.</p></div></div></div></div><div className="max-w-xl space-y-4 rounded-xl border p-4"><div className="flex items-center gap-2"><KeyRound className="h-4 w-4" /><p className="font-semibold">Cambiar contraseña</p></div><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nueva contraseña (mín. 8 caracteres)" autoComplete="new-password" /><Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirmar nueva contraseña" autoComplete="new-password" /><Button onClick={changePassword} disabled={changingPassword}>{changingPassword ? "Actualizando..." : "Actualizar contraseña"}</Button></div><p className="text-xs text-slate-500">La autenticación de dos factores queda preparada como estado de configuración; no se presenta como activa si Supabase MFA todavía no está configurado.</p></CardContent></Card>
+  </div>;
 }
