@@ -12,14 +12,7 @@ import { FundsPanel } from "@/components/dashboard/FundsPanel";
 import { ProfileSettingsPanel } from "@/components/dashboard/ProfileSettingsPanel";
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 
-export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw redirect({ to: "/login" });
-    return { session };
-  },
-  component: DashboardPage,
-});
+export const Route = createFileRoute("/dashboard")({ beforeLoad: async () => { const { data: { session } } = await supabase.auth.getSession(); if (!session) throw redirect({ to: "/login" }); return { session }; }, component: DashboardPage });
 
 type Portfolio = { balance: number; invested: number; performance_pct: number; today_pnl: number; total_deposited: number; total_pnl: number };
 type Operation = { id: string; asset: string; direction: string; entry_price: number; exit_price: number | null; pnl: number; return_pct: number; size: number; status: string; opened_at: string; closed_at: string | null };
@@ -27,28 +20,22 @@ const demoPortfolio: Portfolio = { balance: 12480, invested: 10000, performance_
 function money(value: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value); }
 
 function DashboardPage() {
-  const { session } = Route.useRouteContext();
-  const [portfolio, setPortfolio] = useState<Portfolio>(demoPortfolio);
-  const [hasPortfolio, setHasPortfolio] = useState(false);
-  const [operations, setOperations] = useState<Operation[]>([]);
-  const [name, setName] = useState("Trader");
+  const { session } = Route.useRouteContext(); const [portfolio, setPortfolio] = useState<Portfolio>(demoPortfolio); const [hasPortfolio, setHasPortfolio] = useState(false);
+  const [operations, setOperations] = useState<Operation[]>([]); const [name, setName] = useState("Trader"); const [avatarUrl, setAvatarUrl] = useState<string | null>(null); const [country, setCountry] = useState("");
 
   useEffect(() => {
     let active = true;
     async function load() {
-      const userId = session.user.id;
+      const userId = session.user.id; const db = supabase as any;
       const [{ data: p }, { data: ops }, { data: profile }] = await Promise.all([
         supabase.from("portfolio").select("balance,invested,performance_pct,today_pnl,total_deposited,total_pnl").eq("user_id", userId).maybeSingle(),
         supabase.from("operations").select("id,asset,direction,entry_price,exit_price,pnl,return_pct,size,status,opened_at,closed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
-        supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+        db.from("profiles").select("full_name,avatar_url,country").eq("id", userId).maybeSingle(),
       ]);
-      if (!active) return;
-      if (p) { setPortfolio(p); setHasPortfolio(true); }
-      if (ops) setOperations(ops);
-      if (profile?.full_name) setName(profile.full_name.split(" ")[0]);
+      if (!active) return; if (p) { setPortfolio(p); setHasPortfolio(true); } if (ops) setOperations(ops);
+      if (profile?.full_name) setName(profile.full_name); if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); if (profile?.country) setCountry(profile.country);
     }
-    load();
-    return () => { active = false; };
+    load(); return () => { active = false; };
   }, [session.user.id]);
 
   const stats = [
@@ -58,25 +45,13 @@ function DashboardPage() {
     { title: "Capital invertido", value: money(portfolio.invested), icon: ArrowUpRight, note: `Depositado: ${money(portfolio.total_deposited)}` },
   ];
 
-  return (
-    <DashboardShell email={session.user.email}>
-      <section className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div><p className="text-sm font-medium text-blue-600">Bienvenido de nuevo</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Hola, {name} 👋</h1><p className="mt-1 text-sm text-slate-500">Aquí tienes un resumen de tu actividad de trading.</p></div>
-          <div className="flex gap-2"><Button variant="outline" asChild><a href="#depositar"><ArrowDownToLine /> Depositar</a></Button><Button asChild><a href="#robot"><Bot /> Robot IA</a></Button></div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.title} className="border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{stat.title}</p><Icon className="h-5 w-5 text-blue-600" /></div><p className="mt-3 text-2xl font-bold">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></CardContent></Card>; })}</div>
-        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          <OperationsPanel operations={operations} />
-          <Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#robot">Configurar robot</a></Button></div></CardContent></Card>
-        </div>
-        <PortfolioPanel portfolio={portfolio} />
-        <RobotConfig userId={session.user.id} />
-        <FundsPanel userId={session.user.id} />
-        <NotificationsPanel userId={session.user.id} />
-        <ProfileSettingsPanel userId={session.user.id} email={session.user.email} />
-        <Card id="portafolio-status" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
-      </section>
-    </DashboardShell>
-  );
+  return <DashboardShell email={session.user.email} userName={name} avatarUrl={avatarUrl} countryCode={country}>
+    <section className="mx-auto max-w-7xl space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-medium text-blue-600">Bienvenido de nuevo</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Hola, {name.split(" ")[0] || "Trader"} 👋</h1><p className="mt-1 text-sm text-slate-500">Aquí tienes un resumen de tu actividad de trading.</p></div><div className="flex gap-2"><Button variant="outline" asChild><a href="#depositar"><ArrowDownToLine /> Depositar</a></Button><Button asChild><a href="#robot"><Bot /> Robot IA</a></Button></div></div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.title} className="border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{stat.title}</p><Icon className="h-5 w-5 text-blue-600" /></div><p className="mt-3 text-2xl font-bold">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></CardContent></Card>; })}</div>
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]"><OperationsPanel operations={operations} /><Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#robot">Configurar robot</a></Button></div></CardContent></Card></div>
+      <PortfolioPanel portfolio={portfolio} /><RobotConfig userId={session.user.id} /><FundsPanel userId={session.user.id} /><NotificationsPanel userId={session.user.id} /><ProfileSettingsPanel userId={session.user.id} email={session.user.email} />
+      <Card id="portafolio-status" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
+    </section>
+  </DashboardShell>;
 }
