@@ -15,7 +15,7 @@ export function PortfolioPanel({ portfolio }: { portfolio: Portfolio }) {
     { label: "Rendimiento", value: `${portfolio.performance_pct >= 0 ? "+" : ""}${portfolio.performance_pct.toFixed(2)}%`, icon: BarChart3 },
   ];
   return (
-    <Card id="portafolio-detalle" className="border-slate-200 shadow-sm">
+    <Card id="portafolio" className="scroll-mt-24 border-slate-200 shadow-sm">
       <CardHeader><CardTitle>Portafolio</CardTitle><p className="text-sm text-slate-500">Vista consolidada de tu capital y resultados.</p></CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
