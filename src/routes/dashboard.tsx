@@ -1,28 +1,64 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowDownToLine, ArrowUpRight, Bot, CircleDollarSign, TrendingUp, WalletCards } from "lucide-react";
+import { ArrowDownToLine, ArrowUpRight, Bell, Bot, CircleDollarSign, TrendingUp, Wallet, WalletCards } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { RobotConfig } from "@/components/dashboard/RobotConfig";
-import { OperationsPanel } from "@/components/dashboard/OperationsPanel";
-import { PortfolioPanel } from "@/components/dashboard/PortfolioPanel";
-import { FundsPanel } from "@/components/dashboard/FundsPanel";
-import { ProfileSettingsPanel } from "@/components/dashboard/ProfileSettingsPanel";
-import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
-import { AdminPortfolioControl } from "@/components/dashboard/AdminPortfolioControl";
-import { AdminUserRolesPanel } from "@/components/dashboard/AdminUserRolesPanel";
 
-export const Route = createFileRoute("/dashboard")({ beforeLoad: async () => { const { data: { session } } = await supabase.auth.getSession(); if (!session) throw redirect({ to: "/login" }); return { session }; }, component: DashboardPage });
 type Portfolio = { balance: number; invested: number; performance_pct: number; today_pnl: number; total_deposited: number; total_pnl: number };
 type Operation = { id: string; asset: string; direction: string; entry_price: number; exit_price: number | null; pnl: number; return_pct: number; size: number; status: string; opened_at: string; closed_at: string | null };
 const demoPortfolio: Portfolio = { balance: 12480, invested: 10000, performance_pct: 24.8, today_pnl: 186.4, total_deposited: 10000, total_pnl: 2480 };
 function money(value: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value); }
 
+export const Route = createFileRoute("/dashboard")({ beforeLoad: async () => { const { data: { session } } = await supabase.auth.getSession(); if (!session) throw redirect({ to: "/login" }); return { session }; }, component: DashboardPage });
+
 function DashboardPage() {
-  const { session } = Route.useRouteContext(); const [portfolio, setPortfolio] = useState<Portfolio>(demoPortfolio); const [hasPortfolio, setHasPortfolio] = useState(false); const [operations, setOperations] = useState<Operation[]>([]); const [name, setName] = useState("Trader"); const [avatarUrl, setAvatarUrl] = useState<string | null>(null); const [country, setCountry] = useState("");
-  useEffect(() => { let active = true; async function load() { const userId = session.user.id; const db = supabase as any; const [{ data: p }, { data: ops }, { data: profile }] = await Promise.all([supabase.from("portfolio").select("balance,invested,performance_pct,today_pnl,total_deposited,total_pnl").eq("user_id", userId).maybeSingle(), supabase.from("operations").select("id,asset,direction,entry_price,exit_price,pnl,return_pct,size,status,opened_at,closed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20), db.from("profiles").select("full_name,avatar_url,country").eq("id", userId).maybeSingle()]); if (!active) return; if (p) { setPortfolio(p); setHasPortfolio(true); } if (ops) setOperations(ops); if (profile?.full_name) setName(profile.full_name); if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); if (profile?.country) setCountry(profile.country); } load(); return () => { active = false; }; }, [session.user.id]);
-  const stats = [{ title: "Patrimonio", value: money(portfolio.balance), icon: WalletCards, note: `${portfolio.performance_pct >= 0 ? "+" : ""}${portfolio.performance_pct.toFixed(2)}% total` }, { title: "P&L de hoy", value: money(portfolio.today_pnl), icon: TrendingUp, note: "Resultado del día" }, { title: "P&L total", value: money(portfolio.total_pnl), icon: CircleDollarSign, note: "Ganancia acumulada" }, { title: "Capital invertido", value: money(portfolio.invested), icon: ArrowUpRight, note: `Depositado: ${money(portfolio.total_deposited)}` }];
-  return <DashboardShell email={session.user.email} userName={name} avatarUrl={avatarUrl} countryCode={country}><section className="mx-auto max-w-7xl space-y-6"><AdminUserRolesPanel userId={session.user.id} /><AdminPortfolioControl userId={session.user.id} /><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-medium text-blue-600">Bienvenido de nuevo</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Hola, {name.split(" ")[0] || "Trader"} 👋</h1><p className="mt-1 text-sm text-slate-500">Aquí tienes un resumen de tu actividad de trading.</p></div><div className="flex gap-2"><Button variant="outline" asChild><a href="#depositar"><ArrowDownToLine /> Depositar</a></Button><Button asChild><a href="#robot"><Bot /> Robot IA</a></Button></div></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.title} className="border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{stat.title}</p><Icon className="h-5 w-5 text-blue-600" /></div><p className="mt-3 text-2xl font-bold">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></CardContent></Card>; })}</div><div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]"><OperationsPanel operations={operations} /><Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#robot">Configurar robot</a></Button></div></CardContent></Card></div><PortfolioPanel portfolio={portfolio} /><RobotConfig userId={session.user.id} /><FundsPanel userId={session.user.id} /><NotificationsPanel userId={session.user.id} /><ProfileSettingsPanel userId={session.user.id} email={session.user.email} /><Card id="portafolio-status" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card></section></DashboardShell>;
+  const { session } = Route.useRouteContext();
+  const [portfolio, setPortfolio] = useState<Portfolio>(demoPortfolio);
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [name, setName] = useState("Trader");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [country, setCountry] = useState("");
+  const [hasPortfolio, setHasPortfolio] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      const userId = session.user.id;
+      const db = supabase as any;
+      const [{ data: p }, { data: ops }, { data: profile }] = await Promise.all([
+        supabase.from("portfolio").select("balance,invested,performance_pct,today_pnl,total_deposited,total_pnl").eq("user_id", userId).maybeSingle(),
+        supabase.from("operations").select("id,asset,direction,entry_price,exit_price,pnl,return_pct,size,status,opened_at,closed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+        db.from("profiles").select("full_name,avatar_url,country").eq("id", userId).maybeSingle(),
+      ]);
+      if (!active) return;
+      if (p) { setPortfolio(p); setHasPortfolio(true); }
+      if (ops) setOperations(ops);
+      if (profile?.full_name) setName(profile.full_name);
+      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+      if (profile?.country) setCountry(profile.country);
+    }
+    void load();
+    return () => { active = false; };
+  }, [session.user.id]);
+
+  const stats = [
+    { title: "Patrimonio", value: money(portfolio.balance), icon: WalletCards, note: `${portfolio.performance_pct >= 0 ? "+" : ""}${portfolio.performance_pct.toFixed(2)}% total` },
+    { title: "P&L de hoy", value: money(portfolio.today_pnl), icon: TrendingUp, note: "Resultado del día" },
+    { title: "P&L total", value: money(portfolio.total_pnl), icon: CircleDollarSign, note: "Ganancia acumulada" },
+    { title: "Capital invertido", value: money(portfolio.invested), icon: ArrowUpRight, note: `Depositado: ${money(portfolio.total_deposited)}` },
+  ];
+
+  return <DashboardShell email={session.user.email} userName={name} avatarUrl={avatarUrl} countryCode={country}>
+    <section className="mx-auto max-w-7xl space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-medium text-blue-600">Bienvenido de nuevo</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Hola, {name.split(" ")[0] || "Trader"} 👋</h1><p className="mt-1 text-sm text-slate-500">Este es el resumen de tu actividad de trading.</p></div><div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link to="/dashboard/fondos"><ArrowDownToLine /> Fondos</Link></Button><Button asChild><Link to="/dashboard/robot"><Bot /> Robot IA</Link></Button></div></div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.title} className="border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{stat.title}</p><Icon className="h-5 w-5 text-blue-600" /></div><p className="mt-3 text-2xl font-bold">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></CardContent></Card>; })}</div>
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <Card className="border-slate-200 shadow-sm"><CardHeader className="flex flex-row items-center justify-between"><CardTitle>Operaciones recientes</CardTitle><Button variant="ghost" size="sm" asChild><Link to="/dashboard/operaciones">Ver todas</Link></Button></CardHeader><CardContent><div className="space-y-3">{operations.length ? operations.map((op) => <div key={op.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{op.asset}</p><p className="text-xs text-slate-500">{op.direction} · {op.status}</p></div><span className={op.pnl >= 0 ? "text-sm font-semibold text-emerald-600" : "text-sm font-semibold text-red-600"}>{op.pnl >= 0 ? "+" : ""}{money(op.pnl)}</span></div>) : <p className="py-8 text-center text-sm text-slate-500">Todavía no hay operaciones registradas.</p>}</div></CardContent></Card>
+        <Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Accesos rápidos</CardTitle></CardHeader><CardContent className="grid gap-2"><Button variant="outline" className="justify-start" asChild><Link to="/dashboard/portafolio"><Wallet /> Ver portafolio</Link></Button><Button variant="outline" className="justify-start" asChild><Link to="/dashboard/notificaciones"><Bell /> Notificaciones</Link></Button><Button variant="outline" className="justify-start" asChild><Link to="/dashboard/perfil">Mi perfil</Link></Button></CardContent></Card>
+      </div>
+      <Card className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores mostrados son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
+    </section>
+  </DashboardShell>;
 }
