@@ -63,12 +63,12 @@ function DashboardPage() {
       <section className="mx-auto max-w-7xl space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-sm font-medium text-blue-600">Bienvenido de nuevo</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Hola, {name} 👋</h1><p className="mt-1 text-sm text-slate-500">Aquí tienes un resumen de tu actividad de trading.</p></div>
-          <div className="flex gap-2"><Button variant="outline" asChild><a href="#depositar"><ArrowDownToLine /> Depositar</a></Button><Button asChild><a href="#configurar-robot"><Bot /> Robot IA</a></Button></div>
+          <div className="flex gap-2"><Button variant="outline" asChild><a href="#depositar"><ArrowDownToLine /> Depositar</a></Button><Button asChild><a href="#robot"><Bot /> Robot IA</a></Button></div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => { const Icon = stat.icon; return <Card key={stat.title} className="border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{stat.title}</p><Icon className="h-5 w-5 text-blue-600" /></div><p className="mt-3 text-2xl font-bold">{stat.value}</p><p className="mt-1 text-xs text-slate-500">{stat.note}</p></CardContent></Card>; })}</div>
         <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
           <OperationsPanel operations={operations} />
-          <Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#configurar-robot">Configurar robot</a></Button></div></CardContent></Card>
+          <Card className="border-slate-200 shadow-sm"><CardHeader><CardTitle>Resumen del Robot</CardTitle></CardHeader><CardContent><div className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2"><Bot className="h-5 w-5" /></div><div><p className="font-semibold">Trade Nova AI</p><p className="text-xs text-slate-400">Configuración disponible abajo</p></div></div><Button className="mt-5 w-full" variant="secondary" asChild><a href="#robot">Configurar robot</a></Button></div></CardContent></Card>
         </div>
         <PortfolioPanel portfolio={portfolio} />
         <RobotConfig userId={session.user.id} />
