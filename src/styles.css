@@ -213,3 +213,18 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
+
+/* Hide the Lovable "Edit with Lovable" badge from the application UI. */
+a[href*="lovable.dev"],
+iframe[src*="lovable.dev"],
+.lovable-badge,
+[data-lovable-badge],
+[data-lovable],
+[id*="lovable-badge"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}
