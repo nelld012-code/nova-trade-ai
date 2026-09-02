@@ -1,110 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Bell,
-  Bot,
-  ChevronRight,
-  CircleDollarSign,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Settings,
-  ShieldCheck,
-  User,
-  Wallet,
-  X,
-} from "lucide-react";
+import { Bell, Bot, ChevronRight, CircleDollarSign, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, User, Wallet, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Robot IA", href: "/dashboard#robot", icon: Bot },
-  { label: "Operaciones", href: "/dashboard#operaciones", icon: CircleDollarSign },
-  { label: "Portafolio", href: "/dashboard#portafolio", icon: Wallet },
-  { label: "Notificaciones", href: "/dashboard#notificaciones", icon: Bell },
-  { label: "Perfil", href: "/dashboard#perfil", icon: User },
-  { label: "Preferencias", href: "/dashboard#preferencias", icon: Settings },
-  { label: "Seguridad", href: "/dashboard#seguridad", icon: ShieldCheck },
-];
-
-export function DashboardShell({ children, email }: { children: ReactNode; email?: string | null }) {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) navigate({ to: "/login" });
-    });
-    return () => data.subscription.unsubscribe();
-  }, [navigate]);
-
-  async function logout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/login" });
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-slate-200 bg-slate-950 text-white lg:block">
-        <div className="flex h-full flex-col">
-          <div className="border-b border-white/10 px-6 py-6">
-            <Link to="/" className="block">
-              <div className="text-lg font-black tracking-tight">TRADE NOVA AI</div>
-              <div className="mt-1 text-xs text-slate-400">Intelligent Trading. Smarter Decisions.</div>
-            </Link>
-          </div>
-          <nav className="flex-1 space-y-1 px-3 py-5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <a key={item.label} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white">
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                  {item.label === "Dashboard" && <ChevronRight className="ml-auto h-4 w-4 text-slate-500" />}
-                </a>
-              );
-            })}
-          </nav>
-          <div className="border-t border-white/10 p-4">
-            <div className="mb-3 truncate px-2 text-xs text-slate-400">{email ?? "Cuenta activa"}</div>
-            <Button variant="ghost" className="w-full justify-start gap-3 text-slate-300 hover:bg-white/10 hover:text-white" onClick={logout}>
-              <LogOut className="h-4 w-4" /> Cerrar sesión
-            </Button>
-          </div>
-        </div>
-      </aside>
-
-      {open && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex items-center justify-between border-b border-white/10 p-5">
-          <div className="font-black">TRADE NOVA AI</div>
-          <Button size="icon" variant="ghost" className="text-white hover:bg-white/10" onClick={() => setOpen(false)}><X /></Button>
-        </div>
-        <nav className="space-y-1 p-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return <a key={item.label} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 hover:bg-white/10 hover:text-white"><Icon className="h-4 w-4" />{item.label}</a>;
-          })}
-        </nav>
-        <div className="absolute bottom-4 left-4 right-4">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-slate-300 hover:bg-white/10 hover:text-white" onClick={logout}><LogOut className="h-4 w-4" /> Cerrar sesión</Button>
-        </div>
-      </aside>
-
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
-          <div className="flex items-center gap-3">
-            <Button size="icon" variant="ghost" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menú"><Menu /></Button>
-            <div>
-              <div className="text-sm font-semibold">Panel de control</div>
-              <div className="text-xs text-slate-500">Modo DEMO · datos de demostración</div>
-            </div>
-          </div>
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Sistema operativo</div>
-        </header>
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
-      </div>
-    </div>
-  );
+import { countryOptions } from "@/lib/countries";
+const navItems = [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }, { label: "Robot IA", href: "/dashboard#robot", icon: Bot }, { label: "Operaciones", href: "/dashboard#operaciones", icon: CircleDollarSign }, { label: "Portafolio", href: "/dashboard#portafolio", icon: Wallet }, { label: "Notificaciones", href: "/dashboard#notificaciones", icon: Bell }, { label: "Perfil", href: "/dashboard#perfil", icon: User }, { label: "Preferencias", href: "/dashboard#preferencias", icon: Settings }, { label: "Seguridad", href: "/dashboard#seguridad", icon: ShieldCheck }];
+export function DashboardShell({ children, email, userName, avatarUrl, countryCode }: { children: ReactNode; email?: string | null; userName?: string; avatarUrl?: string | null; countryCode?: string }) {
+  const navigate = useNavigate(); const [open, setOpen] = useState(false); const country = countryOptions.find((item) => item.code === countryCode); const initials = (userName || email || "U").trim().charAt(0).toUpperCase();
+  useEffect(() => { const { data } = supabase.auth.onAuthStateChange((_event, session) => { if (!session) navigate({ to: "/login" }); }); return () => data.subscription.unsubscribe(); }, [navigate]);
+  async function logout() { await supabase.auth.signOut(); navigate({ to: "/login" }); }
+  const UserIdentity = ({ mobile = false }: { mobile?: boolean }) => <div className={`flex items-center gap-3 ${mobile ? "px-2 py-3" : ""}`}><div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${userName || "usuario"}`} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-500">{initials}</div>}</div><div className="min-w-0"><p className="truncate text-sm font-semibold">{country?.flag ? `${country.flag} ` : ""}{userName || "Cuenta activa"}</p><p className="truncate text-[11px] text-slate-500">{country?.name || email || "Usuario"}</p></div></div>;
+  return <div className="min-h-screen bg-slate-50 text-slate-950"><aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-slate-200 bg-slate-950 text-white lg:block"><div className="flex h-full flex-col"><div className="border-b border-white/10 px-6 py-6"><Link to="/" className="block"><div className="text-lg font-black tracking-tight">TRADE NOVA AI</div><div className="mt-1 text-xs text-slate-400">Intelligent Trading. Smarter Decisions.</div></Link></div><nav className="flex-1 space-y-1 px-3 py-5">{navItems.map((item) => { const Icon = item.icon; return <a key={item.label} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white"><Icon className="h-4 w-4" />{item.label}{item.label === "Dashboard" && <ChevronRight className="ml-auto h-4 w-4 text-slate-500" />}</a>; })}</nav><div className="border-t border-white/10 p-4"><div className="mb-3"><UserIdentity /></div><Button variant="ghost" className="w-full justify-start gap-3 text-slate-300 hover:bg-white/10 hover:text-white" onClick={logout}><LogOut className="h-4 w-4" /> Cerrar sesión</Button></div></div></aside>{open && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setOpen(false)} />}<aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}><div className="flex items-center justify-between border-b border-white/10 p-5"><div className="font-black">TRADE NOVA AI</div><Button size="icon" variant="ghost" className="text-white hover:bg-white/10" onClick={() => setOpen(false)}><X /></Button></div><nav className="space-y-1 p-3">{navItems.map((item) => { const Icon = item.icon; return <a key={item.label} href={item.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 hover:bg-white/10 hover:text-white"><Icon className="h-4 w-4" />{item.label}</a>; })}</nav><div className="absolute bottom-4 left-4 right-4"><UserIdentity mobile /><Button variant="ghost" className="w-full justify-start gap-3 text-slate-300 hover:bg-white/10 hover:text-white" onClick={logout}><LogOut className="h-4 w-4" /> Cerrar sesión</Button></div></aside><div className="lg:pl-64"><header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6"><div className="flex items-center gap-3"><Button size="icon" variant="ghost" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menú"><Menu /></Button><div><div className="text-sm font-semibold">Panel de control</div><div className="text-xs text-slate-500">Modo DEMO · datos de demostración</div></div></div><div className="flex items-center gap-3"><div className="hidden sm:block"><UserIdentity /></div><div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 md:flex"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Sistema operativo</div></div></header><main className="p-4 sm:p-6 lg:p-8">{children}</main></div></div>;
 }
