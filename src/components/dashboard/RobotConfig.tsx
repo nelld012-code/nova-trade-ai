@@ -9,6 +9,25 @@ import { Switch } from "@/components/ui/switch";
 const marketOptions = ["BTC/USD", "ETH/USD", "EUR/USD", "XAU/USD"];
 const strategies = ["Equilibrada", "Conservadora", "Momentum", "Tendencia"];
 
+function normalizeStrategy(value: string | null | undefined) {
+  const normalized = (value ?? "").toLowerCase();
+  if (normalized.includes("conserv")) return "Conservadora";
+  if (normalized.includes("momentum")) return "Momentum";
+  if (normalized.includes("tend")) return "Tendencia";
+  return "Equilibrada";
+}
+
+function normalizeRisk(value: string | null | undefined) {
+  const normalized = (value ?? "").toLowerCase();
+  if (normalized.includes("low") || normalized.includes("bajo")) return "Bajo";
+  if (normalized.includes("high") || normalized.includes("alto")) return "Alto";
+  return "Medio";
+}
+
+function normalizeMode(value: string | null | undefined) {
+  return (value ?? "").toUpperCase() === "LIVE" ? "LIVE" : "DEMO";
+}
+
 export function RobotConfig({ userId }: { userId: string }) {
   const [robotId, setRobotId] = useState<string | null>(null);
   const [strategy, setStrategy] = useState("Equilibrada");
@@ -21,16 +40,23 @@ export function RobotConfig({ userId }: { userId: string }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    supabase.from("robots").select("id,strategy,risk_level,mode,capital_allocation,markets,status").eq("user_id", userId).maybeSingle().then(({ data }) => {
+    let active = true;
+    supabase.from("robots").select("id,strategy,risk_level,mode,capital_allocation,markets,status").eq("user_id", userId).maybeSingle().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
       if (!data) return;
       setRobotId(data.id);
-      setStrategy(data.strategy || "Equilibrada");
-      setRisk(data.risk_level || "Medio");
-      setMode(data.mode || "DEMO");
+      setStrategy(normalizeStrategy(data.strategy));
+      setRisk(normalizeRisk(data.risk_level));
+      setMode(normalizeMode(data.mode));
       setCapital(String(data.capital_allocation ?? 1000));
       setMarkets(data.markets?.length ? data.markets : ["BTC/USD", "ETH/USD"]);
-      setEnabled(data.status === "active");
+      setEnabled((data.status ?? "").toLowerCase() === "active");
     });
+    return () => { active = false; };
   }, [userId]);
 
   function toggleMarket(market: string) {
