@@ -5,7 +5,6 @@ import { AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthShell } from "@/components/auth/AuthShell";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/register")({ component: RegisterPage });
