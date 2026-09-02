@@ -1,81 +1,11 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { buildDemoCandles } from "@/services/trading";
-
-const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const candles = buildDemoCandles("EQUITY", 12, 100);
-const data = candles.map((c, i) => ({ month: months[i], value: Math.round(c.close * 100) / 100 }));
-
-const stats = [
-  { label: "Operaciones analizadas", value: "+2.4M" },
-  { label: "Activos monitoreados", value: "120+" },
-  { label: "Latencia media de señal", value: "<180ms" },
-  { label: "Disponibilidad", value: "99.9%" },
-];
+import { useLanguage } from "@/lib/i18n";
 
 export function PerformanceSection() {
-  return (
-    <section id="rendimientos" className="scroll-mt-20 bg-neutral-surface py-20 lg:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <p className="eyebrow text-primary">Rendimientos</p>
-            <h2 className="mt-3 text-3xl font-extrabold text-foreground sm:text-4xl">
-              DATOS CLAROS.
-              <br />
-              DECISIONES INFORMADAS.
-            </h2>
-            <p className="mt-5 max-w-xl text-muted-foreground">
-              Sigue la evolución de tu capital, el rendimiento diario y el historial de cada
-              operación con métricas transparentes. Sin promesas irreales: información precisa
-              para decidir mejor.
-            </p>
-            <dl className="mt-8 grid grid-cols-2 gap-4">
-              {stats.map((s) => (
-                <div key={s.label} className="rounded-xl border border-border bg-card p-4">
-                  <dt className="text-xs font-medium text-muted-foreground">{s.label}</dt>
-                  <dd className="mt-1 text-2xl font-extrabold text-foreground">{s.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-6 text-xs text-muted-foreground">
-              * Gráfico ilustrativo con datos de demostración. Rendimientos pasados no garantizan
-              resultados futuros. Toda inversión implica riesgo.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="eyebrow text-muted-foreground">Curva de capital (demo)</p>
-                <p className="mt-1 text-2xl font-extrabold text-foreground">Índice TradeNova</p>
-              </div>
-              <span className="rounded-full bg-profit/10 px-3 py-1 text-xs font-bold text-profit">
-                Simulación
-              </span>
-            </div>
-            <div className="mt-6 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-                  <defs>
-                    <linearGradient id="perfArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }} domain={["dataMin - 5", "dataMax + 5"]} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", fontSize: 12 }}
-                    formatter={(v) => [`${v}`, "Índice"]}
-                  />
-                  <Area type="monotone" dataKey="value" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#perfArea)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  const { language, t } = useLanguage(); const en = language === "en";
+  const months = en ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] : ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const candles = buildDemoCandles("EQUITY", 12, 100); const data = candles.map((c, i) => ({ month: months[i], value: Math.round(c.close * 100) / 100 }));
+  const stats = en ? [{ label: "Operations analyzed", value: "+2.4M" }, { label: "Assets monitored", value: "120+" }, { label: "Average signal latency", value: "<180ms" }, { label: "Availability", value: "99.9%" }] : [{ label: "Operaciones analizadas", value: "+2.4M" }, { label: "Activos monitoreados", value: "120+" }, { label: "Latencia media de señal", value: "<180ms" }, { label: "Disponibilidad", value: "99.9%" }];
+  return <section id="rendimientos" className="scroll-mt-20 bg-neutral-surface py-20 lg:py-28"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid items-center gap-12 lg:grid-cols-2"><div><p className="eyebrow text-primary">{t("performance")}</p><h2 className="mt-3 text-3xl font-extrabold text-foreground sm:text-4xl">{en ? <>CLEAR DATA.<br />INFORMED DECISIONS.</> : <>DATOS CLAROS.<br />DECISIONES INFORMADAS.</>}</h2><p className="mt-5 max-w-xl text-muted-foreground">{en ? "Track your capital, daily performance and every operation with transparent metrics. No unrealistic promises: precise information to help you decide better." : "Sigue la evolución de tu capital, el rendimiento diario y el historial de cada operación con métricas transparentes. Sin promesas irreales: información precisa para decidir mejor."}</p><dl className="mt-8 grid grid-cols-2 gap-4">{stats.map((s) => <div key={s.label} className="rounded-xl border border-border bg-card p-4"><dt className="text-xs font-medium text-muted-foreground">{s.label}</dt><dd className="mt-1 text-2xl font-extrabold text-foreground">{s.value}</dd></div>)}</dl><p className="mt-6 text-xs text-muted-foreground">{en ? "* Illustrative chart with demonstration data. Past performance does not guarantee future results. All investments involve risk." : "* Gráfico ilustrativo con datos de demostración. Rendimientos pasados no garantizan resultados futuros. Toda inversión implica riesgo."}</p></div><div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]"><div className="flex items-center justify-between"><div><p className="eyebrow text-muted-foreground">{en ? "Capital curve (demo)" : "Curva de capital (demo)"}</p><p className="mt-1 text-2xl font-extrabold text-foreground">TradeNova Index</p></div><span className="rounded-full bg-profit/10 px-3 py-1 text-xs font-bold text-profit">{en ? "Simulation" : "Simulación"}</span></div><div className="mt-6 h-72"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}><defs><linearGradient id="perfArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} /></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} /><XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }} /><YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }} domain={["dataMin - 5", "dataMax + 5"]} /><Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", fontSize: 12 }} formatter={(v) => [`${v}`, en ? "Index" : "Índice"]} /><Area type="monotone" dataKey="value" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#perfArea)" /></AreaChart></ResponsiveContainer></div></div></div></div></section>;
 }
