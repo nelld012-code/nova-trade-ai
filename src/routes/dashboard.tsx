@@ -10,6 +10,7 @@ import { OperationsPanel } from "@/components/dashboard/OperationsPanel";
 import { PortfolioPanel } from "@/components/dashboard/PortfolioPanel";
 import { FundsPanel } from "@/components/dashboard/FundsPanel";
 import { ProfileSettingsPanel } from "@/components/dashboard/ProfileSettingsPanel";
+import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -72,6 +73,7 @@ function DashboardPage() {
         <PortfolioPanel portfolio={portfolio} />
         <RobotConfig userId={session.user.id} />
         <FundsPanel userId={session.user.id} />
+        <NotificationsPanel userId={session.user.id} />
         <ProfileSettingsPanel userId={session.user.id} email={session.user.email} />
         <Card id="portafolio-status" className="border-amber-200 bg-amber-50/50 shadow-sm"><CardContent className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold">{hasPortfolio ? "Portafolio conectado" : "Modo DEMO activo"}</p><p className="text-sm text-slate-600">{hasPortfolio ? "Los indicadores proceden de tu registro de portafolio en Supabase." : "Los valores son de demostración porque todavía no hay un portafolio asociado a esta cuenta."}</p></div><span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPortfolio ? "Supabase" : "Simulación"}</span></CardContent></Card>
       </section>
