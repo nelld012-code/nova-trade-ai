@@ -10,7 +10,6 @@ async function notifyTelegram(user: { id: string; email?: string | null }, conte
   const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
   if (!botToken || !chatId) return;
-
   const text = [
     "🔔 TRADE NOVA AI — Nuevo mensaje",
     "",
@@ -18,7 +17,6 @@ async function notifyTelegram(user: { id: string; email?: string | null }, conte
     `🆔 ID: ${user.id}`,
     `💬 ${content.slice(0, 3500)}`,
   ].join("\n");
-
   try {
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
@@ -26,7 +24,25 @@ async function notifyTelegram(user: { id: string; email?: string | null }, conte
       body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
     });
   } catch {
-    // Telegram notifications must never prevent NOVA AI from answering the user.
+    // Telegram must never prevent NOVA AI from answering the user.
+  }
+}
+
+async function persistAssistantMessage(supabaseUrl: string, serviceRoleKey: string | undefined, userId: string, content: string) {
+  if (!serviceRoleKey) return;
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/ai_chat_messages`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ user_id: userId, role: "assistant", content: content.slice(0, 12000) }),
+    });
+  } catch {
+    // Chat delivery is independent from persistence failures.
   }
 }
 
@@ -39,6 +55,7 @@ Deno.serve(async (req) => {
     if (!auth) throw new Error("Unauthorized");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!supabaseUrl || !anonKey) throw new Error("Supabase configuration is missing");
     if (!openaiKey) throw new Error("AI provider is not configured");
@@ -64,6 +81,7 @@ Deno.serve(async (req) => {
     const data = await upstream.json();
     if (!upstream.ok) throw new Error(data?.error?.message || "AI provider error");
     const output = data?.output_text || data?.output?.flatMap((item: any) => item?.content || []).find((c: any) => c?.text)?.text || "No response generated.";
+    await persistAssistantMessage(supabaseUrl, serviceRoleKey, user.id, output);
     return new Response(JSON.stringify({ content: output }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unexpected error" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
