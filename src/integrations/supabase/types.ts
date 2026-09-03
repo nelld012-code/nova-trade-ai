@@ -430,6 +430,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_update_portfolio: {
+        Args: {
+          new_balance: number
+          new_invested: number
+          new_performance_pct: number
+          new_today_pnl: number
+          new_total_deposited: number
+          new_total_pnl: number
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       bootstrap_first_admin: { Args: never; Returns: boolean }
       has_role: {
         Args: {
