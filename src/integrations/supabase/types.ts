@@ -275,6 +275,39 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_controls: {
+        Row: {
+          id: string
+          kill_switch: boolean
+          max_daily_loss_usd: number
+          max_drawdown_pct: number
+          max_open_positions: number
+          max_position_usd: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kill_switch?: boolean
+          max_daily_loss_usd?: number
+          max_drawdown_pct?: number
+          max_open_positions?: number
+          max_position_usd?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kill_switch?: boolean
+          max_daily_loss_usd?: number
+          max_drawdown_pct?: number
+          max_open_positions?: number
+          max_position_usd?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       robots: {
         Row: {
           capital_allocation: number
@@ -350,6 +383,27 @@ export type Database = {
           two_factor_enabled?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      trading_runtime: {
+        Row: {
+          global_kill_switch: boolean
+          id: boolean
+          live_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          global_kill_switch?: boolean
+          id?: boolean
+          live_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          global_kill_switch?: boolean
+          id?: boolean
+          live_enabled?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
