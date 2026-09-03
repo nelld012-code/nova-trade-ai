@@ -4,7 +4,7 @@ import { RiskControlsPanel } from "@/components/dashboard/RiskControlsPanel";
 import { RobotConfig } from "@/components/dashboard/RobotConfig";
 import { DashboardPageLayout, requireDashboardSession } from "@/components/dashboard/DashboardPageLayout";
 
-export const Route = createFileRoute("/dashboard/robot")({ beforeLoad: requireDashboardSession, component: RobotPage });
+export const Route = createFileRoute("/dashboard_/robot")({ beforeLoad: requireDashboardSession, component: RobotPage });
 
 function RobotPage() {
   const { session } = Route.useRouteContext();

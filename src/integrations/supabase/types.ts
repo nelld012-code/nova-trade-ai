@@ -238,8 +238,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          country: string | null
           created_at: string
+          date_of_birth: string | null
           email: string
           full_name: string
           id: string
@@ -247,8 +250,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           full_name?: string
           id: string
@@ -256,13 +262,49 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      risk_controls: {
+        Row: {
+          id: string
+          kill_switch: boolean
+          max_daily_loss_usd: number
+          max_drawdown_pct: number
+          max_open_positions: number
+          max_position_usd: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kill_switch?: boolean
+          max_daily_loss_usd?: number
+          max_drawdown_pct?: number
+          max_open_positions?: number
+          max_position_usd?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kill_switch?: boolean
+          max_daily_loss_usd?: number
+          max_drawdown_pct?: number
+          max_open_positions?: number
+          max_position_usd?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -344,6 +386,27 @@ export type Database = {
         }
         Relationships: []
       }
+      trading_runtime: {
+        Row: {
+          global_kill_switch: boolean
+          id: boolean
+          live_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          global_kill_switch?: boolean
+          id?: boolean
+          live_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          global_kill_switch?: boolean
+          id?: boolean
+          live_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -403,6 +466,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          country: string
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
+      admin_set_user_role: {
+        Args: {
+          new_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+        }
+        Returns: boolean
+      }
+      admin_update_portfolio: {
+        Args: {
+          new_balance: number
+          new_invested: number
+          new_performance_pct: number
+          new_today_pnl: number
+          new_total_deposited: number
+          new_total_pnl: number
+          target_user_id: string
+        }
+        Returns: boolean
+      }
+      bootstrap_first_admin: { Args: never; Returns: boolean }
+      demo_execute_tick: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -428,12 +523,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -457,11 +552,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -482,11 +577,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -507,11 +602,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -524,11 +619,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
