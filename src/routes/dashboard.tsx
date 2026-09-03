@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useLanguage } from "@/lib/i18n";
+import { DEMO_EXECUTION_EVENT } from "@/lib/demo-events";
 
 type Portfolio = { balance: number; invested: number; performance_pct: number; today_pnl: number; total_deposited: number; total_pnl: number };
 type Operation = { id: string; asset: string; direction: string; entry_price: number; exit_price: number | null; pnl: number; return_pct: number; size: number; status: string; opened_at: string; closed_at: string | null };
@@ -18,7 +19,14 @@ export const Route = createFileRoute("/dashboard")({ beforeLoad: async () => { c
 function DashboardPage() {
   const { session } = Route.useRouteContext(); const { language } = useLanguage(); const en = language === "en";
   const [portfolio, setPortfolio] = useState<Portfolio>(demoPortfolio); const [operations, setOperations] = useState<Operation[]>([]); const [name, setName] = useState("Trader"); const [avatarUrl, setAvatarUrl] = useState<string | null>(null); const [country, setCountry] = useState(""); const [hasPortfolio, setHasPortfolio] = useState(false);
-  useEffect(() => { let active = true; async function load() { const userId = session.user.id; const db = supabase as any; const [{ data: p }, { data: ops }, { data: profile }] = await Promise.all([supabase.from("portfolio").select("balance,invested,performance_pct,today_pnl,total_deposited,total_pnl").eq("user_id", userId).maybeSingle(), supabase.from("operations").select("id,asset,direction,entry_price,exit_price,pnl,return_pct,size,status,opened_at,closed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5), db.from("profiles").select("full_name,avatar_url,country").eq("id", userId).maybeSingle()]); if (!active) return; if (p) { setPortfolio(p); setHasPortfolio(true); } if (ops) setOperations(ops); if (profile?.full_name) setName(profile.full_name); if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); if (profile?.country) setCountry(profile.country); } void load(); return () => { active = false; }; }, [session.user.id]);
+  useEffect(() => {
+    let active = true;
+    async function load() { const userId = session.user.id; const db = supabase as any; const [{ data: p }, { data: ops }, { data: profile }] = await Promise.all([supabase.from("portfolio").select("balance,invested,performance_pct,today_pnl,total_deposited,total_pnl").eq("user_id", userId).maybeSingle(), supabase.from("operations").select("id,asset,direction,entry_price,exit_price,pnl,return_pct,size,status,opened_at,closed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5), db.from("profiles").select("full_name,avatar_url,country").eq("id", userId).maybeSingle()]); if (!active) return; if (p) { setPortfolio(p); setHasPortfolio(true); } if (ops) setOperations(ops); if (profile?.full_name) setName(profile.full_name); if (profile?.avatar_url) setAvatarUrl(profile.avatar_url); if (profile?.country) setCountry(profile.country); }
+    void load();
+    const refresh = () => { void load(); };
+    window.addEventListener(DEMO_EXECUTION_EVENT, refresh);
+    return () => { active = false; window.removeEventListener(DEMO_EXECUTION_EVENT, refresh); };
+  }, [session.user.id]);
   const stats = [
     { title: en ? "Equity" : "Patrimonio", value: money(portfolio.balance), icon: WalletCards, note: `${portfolio.performance_pct >= 0 ? "+" : ""}${portfolio.performance_pct.toFixed(2)}% ${en ? "total" : "total"}` },
     { title: en ? "Today's P&L" : "P&L de hoy", value: money(portfolio.today_pnl), icon: TrendingUp, note: en ? "Today's result" : "Resultado del día" },
