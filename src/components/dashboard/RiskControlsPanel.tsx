@@ -16,14 +16,14 @@ export function RiskControlsPanel({ userId }: { userId: string }) {
   const [risk, setRisk] = useState<Risk>(defaults);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const db = supabase as any;
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data, error } = await supabase.from("risk_controls").select("max_position_usd,max_daily_loss_usd,max_open_positions,max_drawdown_pct,kill_switch").eq("user_id", userId).maybeSingle();
+      const { data, error } = await db.from("risk_controls").select("max_position_usd,max_daily_loss_usd,max_open_positions,max_drawdown_pct,kill_switch").eq("user_id", userId).maybeSingle();
       if (!active) return;
       if (data) setRisk(data as Risk);
-      else if (!error) setRisk(defaults);
       if (error && !error.message.toLowerCase().includes("relation")) setMessage(error.message);
     })();
     return () => { active = false; };
@@ -31,7 +31,7 @@ export function RiskControlsPanel({ userId }: { userId: string }) {
 
   const save = async () => {
     setSaving(true); setMessage("");
-    const payload = {
+    const payload: Risk & { user_id: string } = {
       user_id: userId,
       max_position_usd: Math.max(1, Number(risk.max_position_usd) || defaults.max_position_usd),
       max_daily_loss_usd: Math.max(1, Number(risk.max_daily_loss_usd) || defaults.max_daily_loss_usd),
@@ -39,7 +39,7 @@ export function RiskControlsPanel({ userId }: { userId: string }) {
       max_drawdown_pct: Math.min(100, Math.max(0.1, Number(risk.max_drawdown_pct) || defaults.max_drawdown_pct)),
       kill_switch: Boolean(risk.kill_switch),
     };
-    const { error } = await supabase.from("risk_controls").upsert(payload, { onConflict: "user_id" });
+    const { error } = await db.from("risk_controls").upsert(payload, { onConflict: "user_id" });
     setSaving(false);
     if (error) { setMessage(error.message); return; }
     setRisk(payload);
@@ -47,7 +47,7 @@ export function RiskControlsPanel({ userId }: { userId: string }) {
   };
 
   const field = (key: keyof Risk, label: string, min: number, step: number) => (
-    <label className="space-y-2"><span className="text-sm font-medium">{label}</span><Input type="number" min={min} step={step} value={String(risk[key])} disabled={risk.kill_switch && key !== "max_position_usd"} onChange={(e) => setRisk((current) => ({ ...current, [key]: Number(e.target.value) }))} /></label>
+    <label className="space-y-2"><span className="text-sm font-medium">{label}</span><Input type="number" min={min} step={step} value={String(risk[key])} onChange={(e) => setRisk((current) => ({ ...current, [key]: Number(e.target.value) }))} /></label>
   );
 
   return <Card className="border-slate-200 shadow-sm">
