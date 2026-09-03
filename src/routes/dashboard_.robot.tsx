@@ -12,7 +12,7 @@ function RobotPage() {
     <div className="space-y-6">
       <RobotConfig userId={session.user.id} />
       <RiskControlsPanel userId={session.user.id} />
-      <DemoExecutionPanel />
+      <DemoExecutionPanel userId={session.user.id} />
     </div>
   </DashboardPageLayout>;
 }
