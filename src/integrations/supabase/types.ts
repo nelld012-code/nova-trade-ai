@@ -412,6 +412,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       admin_list_users: {
         Args: never
         Returns: {
