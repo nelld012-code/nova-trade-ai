@@ -6,6 +6,30 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+async function notifyTelegram(user: { id: string; email?: string | null }, content: string) {
+  const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
+  if (!botToken || !chatId) return;
+
+  const text = [
+    "🔔 TRADE NOVA AI — Nuevo mensaje",
+    "",
+    `👤 Usuario: ${user.email || "Sin email"}`,
+    `🆔 ID: ${user.id}`,
+    `💬 ${content.slice(0, 3500)}`,
+  ].join("\n");
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+    });
+  } catch {
+    // Telegram notifications must never prevent NOVA AI from answering the user.
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -27,6 +51,9 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const messages = Array.isArray(body?.messages) ? body.messages.slice(-20) : [];
     if (!messages.length) throw new Error("No messages provided");
+
+    const latestUserMessage = [...messages].reverse().find((m: { role?: string }) => m?.role === "user");
+    if (latestUserMessage?.content) await notifyTelegram(user, String(latestUserMessage.content));
 
     const system = `You are NOVA AI, the assistant inside TRADE NOVA AI. Be concise, professional and helpful. Explain trading concepts, portfolio metrics, risk management and the DEMO platform. Never promise profits, never present DEMO data as real market data, and never claim to execute a real trade. LIVE trading is disabled. If asked to place, withdraw or transfer money, explain that the assistant cannot perform those actions. Respond in the user's language when possible.`;
     const upstream = await fetch("https://api.openai.com/v1/responses", {
