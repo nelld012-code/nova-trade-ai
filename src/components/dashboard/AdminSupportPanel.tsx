@@ -1,0 +1,53 @@
+import { useEffect, useState } from "react";
+import { LifeBuoy, Loader2, RefreshCw, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/lib/i18n";
+
+type Message = { id: string; user_id: string; role: "user" | "assistant"; content: string; created_at: string };
+
+export function AdminSupportPanel({ userId }: { userId: string }) {
+  const { language } = useLanguage();
+  const en = language === "en";
+  const t = en
+    ? { title: "Support center", desc: "Review recent NOVA AI conversations and send a support reply from the admin console.", user: "User ID", load: "Load conversation", refresh: "Refresh", reply: "Reply", sending: "Sending…", placeholder: "Write a support reply…", empty: "No messages found.", denied: "Admin access required.", error: "Unable to load support data." }
+    : { title: "Centro de soporte", desc: "Revisa conversaciones recientes de NOVA AI y envía respuestas de soporte desde el panel de administración.", user: "ID del usuario", load: "Cargar conversación", refresh: "Actualizar", reply: "Responder", sending: "Enviando…", placeholder: "Escribe una respuesta de soporte…", empty: "No hay mensajes.", denied: "Se requiere acceso de administrador.", error: "No se pudieron cargar los datos de soporte." };
+  const [allowed, setAllowed] = useState(false);
+  const [target, setTarget] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => { void (async () => { const db = supabase as any; const { data, error: e } = await db.rpc("has_role", { _user_id: userId, _role: "admin" }); setAllowed(!e && data === true); })(); }, [userId]);
+
+  async function load() {
+    if (!target.trim()) return;
+    setLoading(true); setError("");
+    const db = supabase as any;
+    const { data, error: e } = await db.from("ai_chat_messages").select("id,user_id,role,content,created_at").eq("user_id", target.trim()).order("created_at", { ascending: true }).limit(100);
+    if (e) setError(e.message || t.error); else setMessages((data ?? []) as Message[]);
+    setLoading(false);
+  }
+
+  async function send() {
+    if (!target.trim() || !text.trim()) return;
+    setSending(true); setError("");
+    const db = supabase as any;
+    const { error: e } = await db.rpc("admin_send_support_message", { target_user_id: target.trim(), message_content: text.trim() });
+    if (e) setError(e.message || t.error); else { setText(""); await load(); }
+    setSending(false);
+  }
+
+  if (!allowed) return null;
+  return <Card id="centro-soporte" className="shadow-sm"><CardHeader><div className="flex items-start gap-3"><div className="rounded-xl bg-slate-900 p-2 text-white"><LifeBuoy className="h-5 w-5" /></div><div><CardTitle>{t.title}</CardTitle><CardDescription>{t.desc}</CardDescription></div></div></CardHeader><CardContent className="space-y-4">
+    <div className="flex gap-2"><Input value={target} onChange={e => setTarget(e.target.value)} placeholder={t.user} /><Button onClick={() => void load()} disabled={loading}>{loading ? <Loader2 className="animate-spin" /> : <RefreshCw />} {t.load}</Button></div>
+    {error && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+    <div className="max-h-80 space-y-2 overflow-auto rounded-xl border bg-slate-50 p-3">{messages.length ? messages.map(m => <div key={m.id} className={`rounded-xl p-3 text-sm ${m.role === "user" ? "bg-white" : "bg-slate-900 text-white"}`}><div className="mb-1 text-xs opacity-60">{m.role} · {new Date(m.created_at).toLocaleString()}</div>{m.content}</div>) : <p className="p-4 text-sm text-slate-500">{t.empty}</p>}</div>
+    <div className="flex gap-2"><Input value={text} onChange={e => setText(e.target.value)} placeholder={t.placeholder} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} /><Button onClick={() => void send()} disabled={sending || !text.trim()}>{sending ? <Loader2 className="animate-spin" /> : <Send />} {sending ? t.sending : t.reply}</Button></div>
+    <p className="text-xs text-slate-500">{t.refresh}: {new Date().toLocaleTimeString()}</p>
+  </CardContent></Card>;
+}
