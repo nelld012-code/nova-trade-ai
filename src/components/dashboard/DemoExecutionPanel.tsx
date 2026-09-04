@@ -11,6 +11,21 @@ import { emitDemoExecution } from "@/lib/demo-events";
 type TickResult = { ok?: boolean; mode?: string; realized_pnl?: number; today_pnl?: number; total_pnl?: number; equity?: number; market_price?: number; asset?: string; open_positions?: number; max_open_positions?: number; opened_operation_id?: string | null; closed_operation_id?: string | null };
 const INTERVALS = [{ value: "10", label: "10s" }, { value: "30", label: "30s" }, { value: "60", label: "60s" }];
 
+/** Maps the raw messages raised by the demo_execute_tick RPC to user-facing ES/EN text. */
+function friendlyRpcError(raw: string, en: boolean) {
+  const r = raw.toLowerCase();
+  if (r.includes("authentication")) return en ? "Your session expired. Sign in again." : "Tu sesión expiró. Inicia sesión de nuevo.";
+  if (r.includes("robot configuration not found")) return en ? "No robot configuration found. Save the AI Robot configuration first." : "No existe configuración del robot. Guarda primero la configuración del Robot IA.";
+  if (r.includes("requires demo mode")) return en ? "The robot must be in DEMO mode to run simulation cycles." : "El robot debe estar en modo DEMO para ejecutar ciclos de simulación.";
+  if (r.includes("robot is not active")) return en ? "The robot is stopped. Activate it in DEMO mode above and try again." : "El robot está detenido. Actívalo en modo DEMO arriba y vuelve a intentarlo.";
+  if (r.includes("kill switch")) return en ? "The risk kill switch is enabled. Disable it in Risk controls to resume." : "El interruptor de emergencia está activado. Desactívalo en Controles de riesgo para continuar.";
+  if (r.includes("portfolio not found")) return en ? "No portfolio record exists for this account yet." : "Todavía no existe un registro de portafolio para esta cuenta.";
+  if (r.includes("daily loss limit")) return en ? "Daily loss limit reached. Execution is blocked until the next day." : "Se alcanzó el límite de pérdida diaria. La ejecución queda bloqueada hasta el día siguiente.";
+  if (r.includes("drawdown")) return en ? "Maximum drawdown reached. Execution is blocked by your risk controls." : "Se alcanzó el drawdown máximo. La ejecución queda bloqueada por tus controles de riesgo.";
+  if (r.includes("permission denied") || r.includes("function") && r.includes("does not exist")) return en ? "The DEMO engine is not available for this account." : "El motor DEMO no está disponible para esta cuenta.";
+  return raw;
+}
+
 export function DemoExecutionPanel({ userId: _userId }: { userId: string }) {
   const { language } = useLanguage(); const en = language === "en";
   const [running, setRunning] = useState(false); const [autoRun, setAutoRun] = useState(false); const [intervalSeconds, setIntervalSeconds] = useState("30");
@@ -19,11 +34,15 @@ export function DemoExecutionPanel({ userId: _userId }: { userId: string }) {
 
   const execute = async () => {
     if (busyRef.current) return; busyRef.current = true; setRunning(true); setError("");
-    const { data, error: rpcError } = await (supabase as any).rpc("demo_execute_tick");
-    if (rpcError) setError(rpcError.message);
-    else { setResult((data ?? {}) as TickResult); setLastRun(new Date()); setCycleCount((value) => value + 1); emitDemoExecution(); }
-    setRunning(false); busyRef.current = false;
+    try {
+      const { data, error: rpcError } = await supabase.rpc("demo_execute_tick");
+      if (rpcError) { setError(friendlyRpcError(rpcError.message, en)); setAutoRun(false); }
+      else { setResult((data ?? {}) as TickResult); setLastRun(new Date()); setCycleCount((value) => value + 1); emitDemoExecution(); }
+    } catch (e) {
+      setError(friendlyRpcError(e instanceof Error ? e.message : String(e), en)); setAutoRun(false);
+    } finally { setRunning(false); busyRef.current = false; }
   };
+  const idleCycle = result && !result.opened_operation_id && !result.closed_operation_id;
 
   useEffect(() => { if (timerRef.current) clearInterval(timerRef.current); timerRef.current = null; if (autoRun) timerRef.current = setInterval(() => void execute(), Number(intervalSeconds) * 1000); return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, [autoRun, intervalSeconds]);
   const startAuto = async () => { setError(""); setAutoRun(true); await execute(); };
