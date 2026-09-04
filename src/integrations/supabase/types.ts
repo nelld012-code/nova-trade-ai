@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      demo_equity_snapshots: {
+        Row: {
+          created_at: string
+          equity: number
+          id: string
+          invested: number
+          open_positions: number
+          today_pnl: number
+          total_pnl: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          equity: number
+          id?: string
+          invested?: number
+          open_positions?: number
+          today_pnl?: number
+          total_pnl?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          equity?: number
+          id?: string
+          invested?: number
+          open_positions?: number
+          today_pnl?: number
+          total_pnl?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      demo_market_state: {
+        Row: {
+          asset: string
+          id: string
+          price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset: string
+          id?: string
+          price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset?: string
+          id?: string
+          price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
@@ -467,6 +584,16 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      admin_get_chat_messages: {
+        Args: { target_user_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }[]
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -476,6 +603,18 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
+      }
+      admin_review_deposit: {
+        Args: { decision: string; request_id: string }
+        Returns: boolean
+      }
+      admin_review_withdrawal: {
+        Args: { decision: string; request_id: string }
+        Returns: boolean
+      }
+      admin_send_support_message: {
+        Args: { message_content: string; target_user_id: string }
+        Returns: boolean
       }
       admin_set_user_role: {
         Args: {
@@ -496,7 +635,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_upsert_risk_controls: {
+        Args: {
+          new_kill_switch: boolean
+          new_max_daily_loss_usd: number
+          new_max_drawdown_pct: number
+          new_max_open_positions: number
+          new_max_position_usd: number
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       bootstrap_first_admin: { Args: never; Returns: boolean }
+      create_risk_alert_if_needed: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       demo_execute_tick: { Args: never; Returns: Json }
       has_role: {
         Args: {

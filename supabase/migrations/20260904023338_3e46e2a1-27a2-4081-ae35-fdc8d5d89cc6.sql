@@ -1,0 +1,3 @@
+CREATE POLICY "admins can read deposits" ON public.deposits FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+CREATE POLICY "admins can read withdrawals" ON public.withdrawals FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+CREATE POLICY "admins can read risk controls" ON public.risk_controls FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
