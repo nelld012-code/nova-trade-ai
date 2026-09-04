@@ -7,7 +7,7 @@ import { countryOptions } from "@/lib/countries";
 import { LanguageSwitcher, useLanguage } from "@/lib/i18n";
 import { NovaAIChat } from "@/components/dashboard/NovaAIChat";
 
-export function DashboardShell({ children, email, userName, avatarUrl, countryCode }: { children: ReactNode; email?: string | null; userName?: string; avatarUrl?: string | null; countryCode?: string }) {
+export function DashboardShell({ children, email, userName, avatarUrl, countryCode }: { children: ReactNode; email?: string | null | undefined; userName?: string | undefined; avatarUrl?: string | null | undefined; countryCode?: string | undefined }) {
   const { language, t } = useLanguage(); const en = language === "en"; const navigate = useNavigate(); const [open, setOpen] = useState(false); const [userId, setUserId] = useState<string>();
   const country = countryOptions.find((item) => item.code === countryCode); const initials = (userName || email || "U").trim().charAt(0).toUpperCase();
   const navItems = [

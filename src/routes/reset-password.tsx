@@ -23,7 +23,7 @@ function ResetPasswordPage() {
     setSaving(true); const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) setError(updateError.message); else { setMessage(en ? "Password updated successfully. You can now sign in with your new password." : "Contraseña actualizada correctamente. Ya puedes entrar con tu nueva contraseña."); setPassword(""); setConfirm(""); } setSaving(false);
   }
-  return <AuthShell title={en ? "New password" : "Nueva contraseña"} subtitle={en ? "Create a secure password to protect your TradeNova AI account." : "Crea una contraseña segura para proteger tu cuenta de TradeNova AI."}>
+  return <AuthShell title={en ? "New password" : "Nueva contraseña"} description={en ? "Create a secure password to protect your TradeNova AI account." : "Crea una contraseña segura para proteger tu cuenta de TradeNova AI."}>
     <Card className="border-slate-200 shadow-sm"><CardContent className="p-6 sm:p-8"><form onSubmit={submit} className="space-y-5">
       <div className="flex items-center gap-3 rounded-xl bg-blue-50 p-4 text-sm text-blue-800"><KeyRound className="h-5 w-5 shrink-0" /><span>{en ? "Use at least 8 characters and avoid easy-to-guess passwords." : "Usa al menos 8 caracteres y evita contraseñas fáciles de adivinar."}</span></div>
       <div><label htmlFor="password" className="mb-2 block text-sm font-medium">{en ? "New password" : "Nueva contraseña"}</label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required /></div>

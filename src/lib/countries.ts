@@ -1,6 +1,6 @@
 export type CountryOption = { code: string; name: string; flag: string };
 
-export const countryOptions: CountryOption[] = [
+const rawCountries: [string, string, string][] = [
   ["AR", "Argentina", "🇦🇷"], ["BO", "Bolivia", "🇧🇴"], ["BR", "Brasil", "🇧🇷"], ["CL", "Chile", "🇨🇱"],
   ["CO", "Colombia", "🇨🇴"], ["CR", "Costa Rica", "🇨🇷"], ["CU", "Cuba", "🇨🇺"], ["DO", "República Dominicana", "🇩🇴"],
   ["EC", "Ecuador", "🇪🇨"], ["SV", "El Salvador", "🇸🇻"], ["GT", "Guatemala", "🇬🇹"], ["HN", "Honduras", "🇭🇳"],
@@ -14,4 +14,6 @@ export const countryOptions: CountryOption[] = [
   ["KR", "Corea del Sur", "🇰🇷"], ["CN", "China", "🇨🇳"], ["IN", "India", "🇮🇳"], ["AE", "Emiratos Árabes Unidos", "🇦🇪"],
   ["ZA", "Sudáfrica", "🇿🇦"], ["EG", "Egipto", "🇪🇬"], ["MA", "Marruecos", "🇲🇦"], ["NG", "Nigeria", "🇳🇬"],
   ["RU", "Rusia", "🇷🇺"], ["TR", "Turquía", "🇹🇷"], ["IL", "Israel", "🇮🇱"], ["SG", "Singapur", "🇸🇬"],
-].map(([code, name, flag]) => ({ code, name, flag }));
+];
+
+export const countryOptions: CountryOption[] = rawCountries.map(([code, name, flag]) => ({ code, name, flag }));

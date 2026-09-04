@@ -105,7 +105,7 @@ export function PreferencesPagePanel({ userId }: { userId: string }) {
         setError(loadError.message);
         return;
       }
-      if (data) setSettings(normalizeSettings(data));
+      if (data) setSettings(normalizeSettings(data as Partial<Settings>));
     })();
     return () => {
       active = false;

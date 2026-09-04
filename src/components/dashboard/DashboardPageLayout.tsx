@@ -39,7 +39,7 @@ export function DashboardPageLayout({ children, title, description }: Props) {
   const resolvedDescription = resolve(description);
 
   return (
-    <DashboardShell email={session.user.email} userName={profile?.full_name || undefined} avatarUrl={profile?.avatar_url || null} countryCode={profile?.country || ""}>
+    <DashboardShell email={session.user.email ?? null} userName={profile?.full_name || undefined} avatarUrl={profile?.avatar_url || null} countryCode={profile?.country || ""}>
       <section className="mx-auto max-w-7xl space-y-6">
         <div>
           <p className="text-sm font-medium text-blue-600">TRADE NOVA AI</p>
