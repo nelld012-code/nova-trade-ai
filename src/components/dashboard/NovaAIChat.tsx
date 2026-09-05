@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 
 type Msg={id?:string;role:"user"|"assistant";content:string};
-export function NovaAIChat({userId}:{userId?:string}){
+export function NovaAIChat({userId}:{userId?:string|undefined}){
  const {language}=useLanguage(); const en=language==="en"; const [open,setOpen]=useState(false),[msgs,setMsgs]=useState<Msg[]>([]),[text,setText]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""); const end=useRef<HTMLDivElement>(null);
  const welcome=en?"Hi! I’m NOVA AI. Ask me about your DEMO portfolio, risk, performance or trading concepts.":"¡Hola! Soy NOVA AI. Pregúntame sobre tu portafolio DEMO, riesgo, rendimiento o conceptos de trading.";
  useEffect(()=>{end.current?.scrollIntoView({behavior:"smooth"})},[msgs,busy]);
