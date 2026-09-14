@@ -9,16 +9,19 @@ async function loadTradingContext(url:string,key:string,userId:string){const hea
 type ChatMessage={role:"system"|"user"|"assistant";content:string};
 type ProviderResult={content:string}|{error:string;status:number};
 
-/** Primary provider: Lovable AI Gateway (OpenAI-compatible chat completions). */
+async function responseError(r:Response){const data=await r.json().catch(()=>null);return String(data?.error?.message||data?.message||`AI request failed (${r.status})`)}
+async function readResponsesStream(r:Response):Promise<string>{
+  if(!r.body)return"";
+  const reader=r.body.getReader(),decoder=new TextDecoder();let buffer="",output="",reasoning="";
+  while(true){const{done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const events=buffer.split("\n\n");buffer=events.pop()||"";for(const event of events){for(const line of event.split("\n")){if(!line.startsWith("data: "))continue;const raw=line.slice(6);if(raw==="[DONE]")continue;try{const item=JSON.parse(raw);if(item.type==="response.output_text.delta"&&typeof item.delta==="string")output+=item.delta;if(item.type==="response.reasoning_summary_text.delta"&&typeof item.delta==="string")reasoning+=item.delta;if(item.type==="error")throw new Error(String(item.error?.message||"AI stream failed"));}catch(error){if(error instanceof SyntaxError)continue;throw error;}}}}
+  return output.trim()||reasoning.trim();
+}
+
+/** Primary provider: Lovable AI Gateway Responses API. */
 async function askLovableGateway(key:string,messages:ChatMessage[]):Promise<ProviderResult>{
-  const model=Deno.env.get("LOVABLE_AI_MODEL")||"google/gemini-3-flash";
-  const r=await fetch("https://ai.gateway.lovable.dev/v1/chat/completions",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model,messages,max_tokens:900})});
-  if(r.status===429)return{error:"rate_limited",status:429};
-  if(r.status===402)return{error:"payment_required",status:402};
-  const data=await r.json().catch(()=>null);
-  if(!r.ok)return{error:data?.error?.message||`Gateway error ${r.status}`,status:r.status};
-  const content=data?.choices?.[0]?.message?.content;
-  return typeof content==="string"&&content.trim()?{content}:{error:"empty_response",status:502};
+  const r=await fetch("https://ai.gateway.lovable.dev/v1/responses",{method:"POST",headers:{"Lovable-API-Key":key,"X-Lovable-AIG-SDK":"fetch","Content-Type":"application/json"},body:JSON.stringify({model:"openai/gpt-6-astra",input:messages,stream:true,store:false,reasoning:{effort:"medium",summary:"auto"},include:["reasoning.encrypted_content"]})});
+  if(!r.ok)return{error:await responseError(r),status:r.status};
+  try{const content=await readResponsesStream(r);return content?{content}:{error:"empty_response",status:502}}catch(error){return{error:error instanceof Error?error.message:"stream_error",status:502}}
 }
 
 /** Fallback provider: OpenAI Responses API. */
@@ -32,8 +35,8 @@ async function askOpenAI(key:string,messages:ChatMessage[]):Promise<ProviderResu
 }
 
 function userFacingProviderError(code:string){
-  if(code==="rate_limited")return"NOVA AI is receiving too many requests. Please try again in a moment.";
-  if(code==="payment_required")return"NOVA AI credits are exhausted. Please contact the administrator.";
+  if(code==="rate_limited")return"NOVA AI is receiving too many requests. Please try again shortly.";
+  if(code==="payment_required")return"NOVA AI is temporarily unavailable because its usage limit was reached.";
   return"NOVA AI cannot answer right now. Please try again shortly.";
 }
 
@@ -61,8 +64,9 @@ Deno.serve(async(req)=>{
     const conversation:ChatMessage[]=[{role:"system",content:system},...normalized];
     let result:ProviderResult|null=null;
     if(lovableKey){result=await askLovableGateway(lovableKey,conversation);if("error"in result)console.error("nova-ai-chat: Lovable gateway failed",result.status,result.error)}
-    if((!result||"error"in result)&&openaiKey){const fb=await askOpenAI(openaiKey,conversation);if("error"in fb)console.error("nova-ai-chat: OpenAI fallback failed",fb.status,fb.error);if(!result||!("error"in fb))result=fb}
-    if(!result||"error"in result){const code=result&&"error"in result?result.error:"unavailable";const status=result&&"error"in result&&(result.status===429||result.status===402)?result.status:502;return json({error:userFacingProviderError(code)},status)}
+    const fallbackAllowed=!result||("error"in result&&result.status>=500);
+    if(fallbackAllowed&&openaiKey){const fb=await askOpenAI(openaiKey,conversation);if("error"in fb)console.error("nova-ai-chat: OpenAI fallback failed",fb.status,fb.error);if(!result||!("error"in fb))result=fb}
+    if(!result||"error"in result){const gatewayStatus=result&&"error"in result?result.status:502;const code=gatewayStatus===429?"rate_limited":gatewayStatus===402||gatewayStatus===403?"payment_required":"unavailable";const status=[400,401,402,403,429].includes(gatewayStatus)?gatewayStatus:502;return json({error:userFacingProviderError(code)},status)}
     const output=result.content;
     await persistAssistantMessage(supabaseUrl,serviceRoleKey,user.id,output);
     await notifyTelegram(user,userMessage,output);
