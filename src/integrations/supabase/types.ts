@@ -701,6 +701,15 @@ export type Database = {
         Returns: boolean
       }
       demo_execute_tick: { Args: never; Returns: Json }
+      demo_get_equity_history: {
+        Args: { range_days: number }
+        Returns: {
+          created_at: string
+          equity: number
+          today_pnl: number
+          total_pnl: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
