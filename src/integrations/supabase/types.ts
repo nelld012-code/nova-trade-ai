@@ -584,6 +584,20 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      admin_get_audit_log: {
+        Args: never
+        Returns: {
+          action: string
+          actor_user_id: string
+          after_data: Json
+          before_data: Json
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          target_user_id: string
+        }[]
+      }
       admin_get_chat_messages: {
         Args: { target_user_id: string }
         Returns: {
@@ -591,6 +605,41 @@ export type Database = {
           created_at: string
           id: string
           role: string
+          user_id: string
+        }[]
+      }
+      admin_get_financial_requests: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          destination: string
+          id: string
+          kind: string
+          method: string
+          status: string
+          user_id: string
+        }[]
+      }
+      admin_get_portfolio: {
+        Args: { target_user_id: string }
+        Returns: {
+          balance: number
+          invested: number
+          performance_pct: number
+          today_pnl: number
+          total_deposited: number
+          total_pnl: number
+        }[]
+      }
+      admin_get_risk_controls: {
+        Args: { target_user_id: string }
+        Returns: {
+          kill_switch: boolean
+          max_daily_loss_usd: number
+          max_drawdown_pct: number
+          max_open_positions: number
+          max_position_usd: number
           user_id: string
         }[]
       }
