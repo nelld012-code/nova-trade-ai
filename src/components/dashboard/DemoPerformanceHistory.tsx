@@ -26,14 +26,7 @@ export function DemoPerformanceHistory({ userId }: { userId: string }) {
     async function load() {
       setLoading(true); setError("");
       const days = ranges.find((item) => item.key === range)?.days ?? 7;
-      const since = new Date(Date.now() - days * 86400000).toISOString();
-      const { data, error: queryError } = await supabase
-        .from("demo_equity_snapshots")
-        .select("equity,today_pnl,total_pnl,created_at")
-        .eq("user_id", userId)
-        .gte("created_at", since)
-        .order("created_at", { ascending: true })
-        .limit(500);
+      const { data, error: queryError } = await supabase.rpc("demo_get_equity_history", { range_days: days });
       if (!active) return;
       if (queryError) setError(queryError.message);
       setSnapshots((data ?? []) as Snapshot[]);
