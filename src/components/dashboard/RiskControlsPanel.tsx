@@ -25,7 +25,7 @@ export function RiskControlsPanel({ userId }: { userId: string }) {
       setLoading(false);
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, en]);
 
   const field = (label: string, value: string | number) => <div className="rounded-xl border bg-slate-50 p-4"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-900">{value}</p></div>;
 
